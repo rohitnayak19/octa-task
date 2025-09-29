@@ -111,7 +111,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       - Always return ISO string (YYYY-MM-DDTHH:mm:ss) without timezone suffix.
 
       Example output (no markdown, no extra text):
-      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-27T10:00:00","status":"todos"}
+      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos"}
 
       User text: "${prompt}"
     `);
@@ -130,8 +130,23 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
         return;
       }
 
+      // ✅ Convert AI date string → Date object
+      let finalDate = null;
+      if (parsed.date) {
+        const d = new Date(parsed.date);
+        if (!isNaN(d)) {
+          finalDate = d;
+        } else {
+          finalDate = new Date(); // fallback: aaj
+        }
+      }
+
       await addDoc(collection(db, "todos"), {
-        ...parsed,
+        title: parsed.title,
+        phone: parsed.phone,
+        description: parsed.description,
+        status: parsed.status || "todos",
+        date: finalDate, // ✅ Firestore will store as Timestamp
         userId: currentUser.uid,
         createdAt: serverTimestamp(),
       });
@@ -146,7 +161,6 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="space-y-4">
@@ -238,7 +252,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       {/* AI Mode */}
       {mode === "ai" && (
         <div className="space-y-3">
-          <span className="text-neutral-600 text-sm">Promt : I need to call client Mr. Sarthak tomorrow at 10 AM, his number is 9876543210, and explain the new offer. Put this in in-process.</span>
+          <span className="text-neutral-400 text-sm font-light">example : I need to call client Mr. Sarthak tomorrow at 10 AM, his number is 7666887658, and explain the new offer. Put this in in-process.</span>
           <Textarea
             className={'mt-3'}
             placeholder="Type your task in natural language..."
