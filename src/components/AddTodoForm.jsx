@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
@@ -29,8 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI("AIzaSyBv4ROjB0SWATqn4xuTP2FGT1wewGCERXw");
 
-function AddTodoForm({ defaultCategory, onTaskAdded }) {
-  const [mode, setMode] = useState("manual"); // 👈 manual | ai
+function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
+  const [mode, setMode] = useState("manual");
 
   // Manual state
   const [title, setTitle] = useState("");
@@ -44,12 +44,29 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
+
+  // ✅ set default time when component mounts
+  useEffect(() => {
+    if (!timePart) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      setTimePart(`${hours}:${minutes}`);
+    }
+  }, []);
+
+  // ✅ Determine target userId (client → developer, otherwise self)
+  const targetUserId = overrideUserId
+    ? overrideUserId // ✅ agar admin ne diya hai
+    : userData?.role === "client" && userData?.linkedDeveloperId
+    ? userData.linkedDeveloperId
+    : currentUser.uid;
 
   // ✅ Manual add
   const handleAddManual = async () => {
     if (!title || !phone) {
-      toast.error("⚠️ Title and phone are required!");
+      toast.error("Title and phone are required!");
       return;
     }
 
@@ -61,6 +78,9 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
         finalDate.setHours(hours);
         finalDate.setMinutes(minutes);
       }
+    } else {
+      // Agar user ne date choose nahi kiya, current date+time use karenge
+      finalDate = new Date();
     }
 
     try {
@@ -70,8 +90,9 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
         description,
         date: finalDate,
         status: category || "todos",
-        userId: currentUser.uid,
+        userId: targetUserId, // 👈 Important
         createdAt: serverTimestamp(),
+        createdBy: currentUser.uid, // 👈 who added (client or self)
       });
 
       setTitle("");
@@ -82,10 +103,10 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       setCategory(defaultCategory || "todos");
 
       if (onTaskAdded) onTaskAdded();
-      toast.success("✅ Task added manually!");
+      toast.success("Task added successfully!");
     } catch (error) {
       console.error("Error adding task:", error);
-      toast.error("❌ Failed to add task. Try again!");
+      toast.error("Failed to add task. Try again!");
     }
   };
 
@@ -99,7 +120,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
 
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const today = new Date().toISOString(); // aaj ka date ISO format
+      const today = new Date().toISOString();
 
       const result = await model.generateContent(`
       Extract task info from this text and return ONLY raw JSON with fields:
@@ -110,35 +131,28 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       - If no date mentioned → use today's date-time: "${today}".
       - Always return ISO string (YYYY-MM-DDTHH:mm:ss) without timezone suffix.
 
-      Example output (no markdown, no extra text):
+      Example output:
       {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos"}
 
       User text: "${prompt}"
     `);
 
       let text = result.response.text();
-
-      // ✅ remove ```json ... ``` wrapper if present
       text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
       let parsed;
       try {
         parsed = JSON.parse(text);
       } catch (e) {
-        console.error("❌ JSON parse error:", e, text);
+        console.error("JSON parse error:", e, text);
         toast.error("AI response was not valid JSON.");
         return;
       }
 
-      // ✅ Convert AI date string → Date object
       let finalDate = null;
       if (parsed.date) {
         const d = new Date(parsed.date);
-        if (!isNaN(d)) {
-          finalDate = d;
-        } else {
-          finalDate = new Date(); // fallback: aaj
-        }
+        finalDate = isNaN(d) ? new Date() : d;
       }
 
       await addDoc(collection(db, "todos"), {
@@ -146,17 +160,18 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
         phone: parsed.phone,
         description: parsed.description,
         status: parsed.status || "todos",
-        date: finalDate, // ✅ Firestore will store as Timestamp
-        userId: currentUser.uid,
+        date: finalDate,
+        userId: targetUserId, // 👈 Important
         createdAt: serverTimestamp(),
+        createdBy: currentUser.uid, // 👈 who added (client or self)
       });
 
       setPrompt("");
       if (onTaskAdded) onTaskAdded();
-      toast.success("✅ Task added with AI!");
+      toast.success("Task added successfully!");
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to add task with AI");
+      toast.error("Failed to add task");
     } finally {
       setLoading(false);
     }
@@ -252,9 +267,11 @@ function AddTodoForm({ defaultCategory, onTaskAdded }) {
       {/* AI Mode */}
       {mode === "ai" && (
         <div className="space-y-3">
-          <span className="text-neutral-400 text-sm font-light">example : I need to call client Mr. Sarthak tomorrow at 10 AM, his number is 7666887658, and explain the new offer. Put this in in-process.</span>
+          <span className="text-neutral-400 text-sm font-light">
+            E.g : Call Sarthak today 10:00, Phone 7888986633 explain Social Media Marketing Campaign → In-Process
+          </span>
           <Textarea
-            className={'mt-3'}
+            className={"mt-3"}
             placeholder="Type your task in natural language..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}

@@ -3,9 +3,15 @@ import React, { useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // ✅ import context
+import { useAuth } from "../context/AuthContext";
 
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -15,13 +21,13 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); // ✅ get context user
+  const { currentUser, role } = useAuth();
 
   const handleLogin = async () => {
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // ❌ remove navigate("/") from here
+      // 🔑 navigate ko yahan nahi karna
     } catch (err) {
       console.error(err);
       if (err.code === "auth/user-not-found") {
@@ -36,12 +42,20 @@ function Login() {
     }
   };
 
-  // ✅ Redirect when AuthContext confirms login
+  // ✅ Redirect after login based on role
   useEffect(() => {
-    if (currentUser) {
-      navigate("/", { replace: true });
+    if (currentUser && role) {
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (role === "client") {
+        navigate("/client", { replace: true });
+      } else if (role === "user") {
+        navigate("/", { replace: true }); // 👈 ab user ka Home page
+      } else {
+        navigate("/", { replace: true }); // fallback
+      }
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, role, navigate]);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
