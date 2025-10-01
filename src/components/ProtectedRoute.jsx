@@ -1,9 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { currentUser, role,loading } = useAuth();
+  const { currentUser, role, loading } = useAuth();
+  const location = useLocation();
 
   console.log("🔒 ProtectedRoute - loading:", loading, "currentUser:", currentUser);
 
@@ -20,16 +21,26 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ Admin only pages
+  // ✅ Admin-only pages
   if (adminOnly && role !== "admin") {
-    return <Navigate to="/" replace />;
+    if (role === "client") {
+      return <Navigate to="/client" replace />;
+    }
+    if (role === "user") {
+      return <Navigate to="/" replace />;
+    }
   }
 
-    // ✅ Agar admin hai aur already `/` visit kare → `/admin` redirect karo
+  // ✅ Redirect rules by role
   if (role === "admin" && location.pathname === "/") {
     return <Navigate to="/admin" replace />;
   }
 
+  if (role === "client" && location.pathname === "/") {
+    return <Navigate to="/client" replace />; 
+  }
+
+  // ✅ User ke liye `/` normal Home hi chalega
   console.log("✅ User authenticated, rendering children");
   return children;
 };

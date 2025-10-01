@@ -3,9 +3,12 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-import Register from './pages/Register'
-import UserDashboard from './pages/UserDashboard'
-import AdminPanel from './pages/AdminPanel'
+import Register from './pages/Register';
+import UserDashboard from './pages/UserDashboard';
+import AdminPanel from './pages/AdminPanel';
+import ClientDashboard from './pages/ClientDashboard';
+import LinkDeveloper from "./pages/LinkDeveloper";
+import CallSchedule from "./pages/CallSchedule";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -15,7 +18,8 @@ function App() {
         <Toaster position="bottom-right" reverseOrder={false} />
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register/>} />
+          <Route path="/register" element={<Register />} />
+
           {/* Admin route */}
           <Route
             path="/admin"
@@ -26,7 +30,7 @@ function App() {
             }
           />
 
-           {/* Admin → View specific user */}
+          {/* Admin → View specific user */}
           <Route
             path="/admin/user/:userId"
             element={
@@ -35,7 +39,18 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Normal User Routes */}
+
+          {/* Client route */}
+          <Route
+            path="/client"
+            element={
+              <ProtectedRoute>
+                <ClientDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Default User (Developer) route */}
           <Route
             path="/"
             element={
@@ -44,7 +59,23 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Add other routes as needed */}
+
+          <Route path="/link-developer" element={
+            <ProtectedRoute>
+              <LinkDeveloper />
+            </ProtectedRoute>
+          } />
+
+          <Route
+            path="/call-schedule"
+            element={
+              <ProtectedRoute>
+                <CallSchedule />
+              </ProtectedRoute>
+            }
+          />
+
+
         </Routes>
       </Router>
     </AuthProvider>

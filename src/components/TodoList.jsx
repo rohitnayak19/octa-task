@@ -13,8 +13,8 @@ import {
 
 function TodoList({ activeTab, role, userId }) {
   const [todos, setTodos] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null); // 👈 date filter
-  const [open, setOpen] = useState(false); // 👈 dialog state
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const targetUserId = userId || auth.currentUser?.uid;
@@ -31,21 +31,20 @@ function TodoList({ activeTab, role, userId }) {
         id: doc.id,
         ...doc.data(),
       }));
-
-      // 👇 agar selectedDate hai to frontend pe filter karo
-      if (selectedDate) {
-        todosData = todosData.filter((todo) => {
-          if (!todo.date) return false;
-          const todoDate = new Date(todo.date.seconds * 1000);
-          return todoDate.toDateString() === selectedDate.toDateString();
-        });
-      }
-
       setTodos(todosData);
     });
 
     return () => unsubscribe();
-  }, [activeTab, userId, selectedDate]);
+  }, [activeTab, userId]); // ❌ removed selectedDate from deps
+
+  // ✅ Date-based filtering (frontend only)
+  const filteredTodos = selectedDate
+    ? todos.filter((todo) => {
+        if (!todo.date) return false;
+        const todoDate = new Date(todo.date.seconds * 1000);
+        return todoDate.toDateString() === selectedDate.toDateString();
+      })
+    : todos;
 
   // ✅ Count tasks for Today & Tomorrow
   const todayCount = todos.filter((todo) => {
@@ -122,7 +121,7 @@ function TodoList({ activeTab, role, userId }) {
             selected={selectedDate}
             onSelect={(date) => {
               setSelectedDate(date);
-              setOpen(false); // auto close after selection
+              setOpen(false);
             }}
           />
         </DialogContent>
@@ -130,8 +129,8 @@ function TodoList({ activeTab, role, userId }) {
 
       {/* ✅ Show tasks */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {todos.length > 0 ? (
-          todos.map((todo) => (
+        {filteredTodos.length > 0 ? (
+          filteredTodos.map((todo) => (
             <TodoItem
               key={todo.id}
               todo={todo}
@@ -140,7 +139,9 @@ function TodoList({ activeTab, role, userId }) {
             />
           ))
         ) : (
-          <p className="text-gray-500">No tasks found for this date.</p>
+          <p className="text-gray-500">
+            {selectedDate ? "No tasks found for selected date." : "No tasks found."}
+          </p>
         )}
       </div>
     </div>

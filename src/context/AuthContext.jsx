@@ -26,21 +26,30 @@ export function AuthProvider({ children }) {
 
           if (docSnap.exists()) {
             const userData = docSnap.data();
+
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               name: userData.name || "",
+              devCode: userData.devCode || null,          // ✅ Developer ke liye
+              linkedUserId: userData.linkedUserId || null, // ✅ Client ke liye
+              status: userData.status || null,             // ✅ Client approval
+              clients: userData.clients || [],             // ✅ Developer ke clients
             });
+
             setRole(userData.role || "user");
-            console.log("✅ Set currentUser:", { uid: user.uid, email: user.email });
           } else {
+            // agar firestore me doc nahi mila
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               name: "",
+              devCode: null,
+              linkedUserId: null,
+              status: null,
+              clients: [],
             });
             setRole("user");
-            console.log("✅ Set default currentUser:", { uid: user.uid, email: user.email });
           }
         } catch (error) {
           console.error("❌ Error fetching user data:", error);
