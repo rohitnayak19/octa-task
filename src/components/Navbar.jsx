@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "../assets/OctaTech_Logo.webp";
 
 function Navbar() {
   const { currentUser, role } = useAuth();
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     signOut(auth);
@@ -17,10 +18,9 @@ function Navbar() {
 
   // ✅ Helper for active link styling
   const linkClasses = (path) =>
-    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-      location.pathname === path
-        ? "bg-yellow-50 text-yellow-600"
-        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
+    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === path
+      ? "bg-yellow-50 text-yellow-600"
+      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
     }`;
 
   return (
@@ -34,41 +34,88 @@ function Navbar() {
           <img src={Logo} alt="Octa_Tech_Logo" width={120} />
         </Link>
 
-        {/* Right Side */}
-        {currentUser ? (
-          <div className="flex items-center gap-4">
-            <Link to="/" className={linkClasses("/")}>
-              Home
-            </Link>
+        {/* Hamburger Button (Mobile) */}
+        <button
+          className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
-            {role === "user" && (
-              <Link to="/call-schedule" className={linkClasses("/call-schedule")}>
-                Call Schedule
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-4">
+          {currentUser ? (
+            <>
+              <Link to="/" className={linkClasses("/")}>
+                Home
               </Link>
-            )}
 
-            {/* ✅ Logout */}
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="ml-2 cursor-pointer flex items-center gap-2 active:scale-105"
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-blue-600 hover:underline">
-              Login
-            </Link>
-            <Link to="/register" className="text-blue-600 hover:underline">
-              Register
-            </Link>
-          </div>
-        )}
+              {role === "user" && (
+                <Link to="/call-schedule" className={linkClasses("/call-schedule")}>
+                  Call Schedule
+                </Link>
+              )}
+
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="ml-2 cursor-pointer flex items-center gap-2 active:scale-105"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-blue-600 hover:underline">
+                Login
+              </Link>
+              <Link to="/register" className="text-blue-600 hover:underline">
+                Register
+              </Link>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden px-4 pb-4 flex flex-col gap-3 border-t border-gray-200 bg-white">
+          {currentUser ? (
+            <>
+              <Link to="/" className={`${linkClasses("/")} w-fit`}>
+                Home
+              </Link>
+
+              {role === "user" && (
+                <Link to="/call-schedule" className={`${linkClasses("/call-schedule")} w-fit`}>
+                  Call Schedule
+                </Link>
+              )}
+
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="mt-2 cursor-pointer flex items-center gap-2 active:scale-105"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-blue-600 hover:underline">
+                Login
+              </Link>
+              <Link to="/register" className="text-blue-600 hover:underline">
+                Register
+              </Link>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

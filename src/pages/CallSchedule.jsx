@@ -311,6 +311,43 @@ function CallSchedule() {
                                             <SelectItem value="Bakery">Bakery</SelectItem>
                                             <SelectItem value="Car Showroom">Car Showroom</SelectItem>
                                             <SelectItem value="Restaurant">Restaurant</SelectItem>
+                                            <SelectItem value="Food Truck">Food Truck</SelectItem>
+                                            <SelectItem value="Specialty Café">Specialty Café</SelectItem>
+                                            <SelectItem value="Cloud Kitchen">Cloud Kitchen</SelectItem>
+                                            <SelectItem value="Boutique Clothing Store">Boutique Clothing Store</SelectItem>
+                                            <SelectItem value="Home Décor & Furnishing Shop">Home Décor & Furnishing Shop</SelectItem>
+                                            <SelectItem value="Fitness Studio">Fitness Studio</SelectItem>
+                                            <SelectItem value="Car Wash & Detailing Service">Car Wash & Detailing Service</SelectItem>
+                                            <SelectItem value="Event Planning & Catering">Event Planning & Catering</SelectItem>
+                                            <SelectItem value="Pet Grooming & Boarding">Pet Grooming & Boarding</SelectItem>
+                                            <SelectItem value="E-commerce Store">E-commerce Store</SelectItem>
+                                            <SelectItem value="Digital Marketing Agency">Digital Marketing Agency</SelectItem>
+                                            <SelectItem value="Coworking Space">Coworking Space</SelectItem>
+                                            <SelectItem value="Organic Farm-to-Table Store">Organic Farm-to-Table Store</SelectItem>
+                                            <SelectItem value="Recycling & Upcycling Business">Recycling & Upcycling Business</SelectItem>
+                                            <SelectItem value="EV Charging Station">EV Charging Station</SelectItem>
+                                            <SelectItem value="Bed & Breakfast">Bed & Breakfast</SelectItem>
+                                            <SelectItem value="Theme Café / Restaurant">Theme Café / Restaurant</SelectItem>
+                                            <SelectItem value="Travel Agency">Travel Agency</SelectItem>
+                                            <SelectItem value="Spa & Wellness Center">Spa & Wellness Center</SelectItem>
+                                            <SelectItem value="Nutrition & Diet Consultancy">Nutrition & Diet Consultancy</SelectItem>
+                                            <SelectItem value="Pharmacy & Health Store">Pharmacy & Health Store</SelectItem>
+                                            <SelectItem value="Tutoring / Coaching Center">Tutoring / Coaching Center</SelectItem>
+                                            <SelectItem value="Skill Development Workshops">Skill Development Workshops</SelectItem>
+                                            <SelectItem value="Daycare / Montessori">Daycare / Montessori</SelectItem>
+                                            <SelectItem value="Mobile App Development">Mobile App Development</SelectItem>
+                                            <SelectItem value="IT Support & Cybersecurity">IT Support & Cybersecurity</SelectItem>
+                                            <SelectItem value="Smart Home Solutions">Smart Home Solutions</SelectItem>
+                                            <SelectItem value="Solar Panel Installation">Solar Panel Installation</SelectItem>
+                                            <SelectItem value="Organic Skincare Brand">Organic Skincare Brand</SelectItem>
+                                            <SelectItem value="Urban Farming / Hydroponics">Urban Farming / Hydroponics</SelectItem>
+                                            <SelectItem value="Podcast / YouTube Studio">Podcast / YouTube Studio</SelectItem>
+                                            <SelectItem value="Photography & Videography">Photography & Videography</SelectItem>
+                                            <SelectItem value="Game Zone / VR Arcade">Game Zone / VR Arcade</SelectItem>
+                                            <SelectItem value="Courier & Delivery Service">Courier & Delivery Service</SelectItem>
+                                            <SelectItem value="Bike / Car Rental">Bike / Car Rental</SelectItem>
+                                            <SelectItem value="Shared Mobility">Shared Mobility</SelectItem>
+
                                             <SelectItem value="other">Other (Add New)</SelectItem>
                                         </SelectContent>
                                     </Select>

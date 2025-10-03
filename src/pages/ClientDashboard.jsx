@@ -3,19 +3,28 @@ import { useAuth } from "../context/AuthContext";
 import { db, auth } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import TodoList from "../components/TodoList";
+import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, LogOut, MoveRight } from "lucide-react";
+import { Loader2, LogOut, MoveRight, Plus } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function ClientDashboard() {
   const { currentUser } = useAuth();
   const [clientInfo, setClientInfo] = useState(null);
   const [developerData, setDeveloperData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate()
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -39,7 +48,7 @@ function ClientDashboard() {
         }
 
         const data = clientSnap.data();
-        setClientInfo(data); // 🔥 status yaha se milega
+        setClientInfo(data);
 
         if (data.status === "approved" && data.linkedUserId) {
           // ✅ Fetch developer data
@@ -84,13 +93,8 @@ function ClientDashboard() {
         <p className="text-gray-600 mt-2">
           Your developer has not approved your access yet.
         </p>
-        <Button
-          onClick={handleLogout}
-          variant={'outline'}
-          className={'mt-2 text-red-600'}
-        >
-          <LogOut />
-          Logout
+        <Button onClick={handleLogout} variant="outline" className="mt-2 text-red-600">
+          <LogOut /> Logout
         </Button>
       </div>
     );
@@ -112,14 +116,8 @@ function ClientDashboard() {
             Request Again
             <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
-
-          <Button
-            onClick={handleLogout}
-            variant={'outline'}
-            className={'text-red-500 hover:text-red-600 group'}
-          >
-            <LogOut />
-            Logout
+          <Button onClick={handleLogout} variant="outline" className="text-red-500 hover:text-red-600">
+            <LogOut /> Logout
           </Button>
         </div>
       </div>
@@ -142,20 +140,13 @@ function ClientDashboard() {
             Request Again
             <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
-
-          <Button
-            onClick={handleLogout}
-            variant={'outline'}
-            className={'text-red-500 hover:text-red-600 group'}
-          >
-            <LogOut />
-            Logout
+          <Button onClick={handleLogout} variant="outline" className="text-red-500 hover:text-red-600">
+            <LogOut /> Logout
           </Button>
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -163,12 +154,8 @@ function ClientDashboard() {
         <h2 className="text-2xl font-bold">
           👤 Client Dashboard – {clientInfo.name || currentUser.email}
         </h2>
-        <Button
-          onClick={handleLogout}
-          variant={'outline'}
-        >
-          <LogOut />
-          Logout
+        <Button onClick={handleLogout} variant="outline">
+          <LogOut /> Logout
         </Button>
       </div>
 
@@ -176,6 +163,29 @@ function ClientDashboard() {
         <p className="text-gray-600 mb-4">
           Linked Developer: <strong>{developerData.name}</strong>
         </p>
+      )}
+
+      {/* ✅ Add Task (Client → Developer) */}
+      {developerData && (
+        <div className="mb-6">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus size={16} /> Add Task for Developer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add a new Task</DialogTitle>
+              </DialogHeader>
+              <AddTodoForm
+                defaultCategory="todos"
+                overrideUserId={developerData.id}
+                onTaskAdded={() => setIsDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
 
       <Tabs defaultValue="todos">
