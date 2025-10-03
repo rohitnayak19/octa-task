@@ -118,7 +118,7 @@ function Home() {
         ) : (
           <>
             {/* ✅ Welcome Section */}
-            <div className="flex items-center justify-between bg-white shadow-sm p-4 rounded-md mb-2">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 justify-between bg-white shadow-sm p-4 rounded-md mb-2">
               <h2 className="text-xl font-bold">
                 Welcome,{" "}
                 <span className="text-yellow-400">
@@ -177,10 +177,10 @@ function Home() {
 
                 {/* ✅ Shadcn Tabs with Icons */}
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid grid-cols-4 w-full mb-2 bg-neutral-50 rounded-lg p-1">
+                  <TabsList className="grid grid-cols-4 w-full mb-2 rounded-lg">
                     {tabs.map((tab) => (
                       <TabsTrigger
-                        className="p-3 text-sm font-medium"
+                        className="p-0 text-sm font-medium bg-gray-100"
                         key={tab.key}
                         value={tab.key}
                       >
