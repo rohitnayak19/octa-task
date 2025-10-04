@@ -74,7 +74,12 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route 
+          path="/admin/user/:userId/call-schedule" 
+          element={
+          <CallSchedule />
+          } 
+          />
 
         </Routes>
       </Router>

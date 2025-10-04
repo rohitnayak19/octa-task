@@ -130,7 +130,7 @@ function Home() {
               {role === "user" && currentUser.devCode && (
                 <div className="flex items-center gap-2 bg-neutral-100 px-3 py-1 rounded-md">
                   <span className="text-sm font-medium">
-                    Dev Code: <span className="font-mono">{currentUser.devCode}</span>
+                    Employee Code: <span className="font-mono">{currentUser.devCode}</span>
                   </span>
                   <Button
                     className="active:scale-105"

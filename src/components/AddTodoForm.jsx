@@ -39,6 +39,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const [datePart, setDatePart] = useState(null);
   const [timePart, setTimePart] = useState("");
   const [category, setCategory] = useState(defaultCategory || "todos");
+  const [priority, setPriority] = useState("medium"); // 👈 new state
 
   // AI state
   const [prompt, setPrompt] = useState("");
@@ -65,7 +66,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
   // ✅ Manual add
   const handleAddManual = async () => {
-    if (!title || !phone) {
+    if (!title) {
       toast.error("Title and phone are required!");
       return;
     }
@@ -79,7 +80,6 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         finalDate.setMinutes(minutes);
       }
     } else {
-      // Agar user ne date choose nahi kiya, current date+time use karenge
       finalDate = new Date();
     }
 
@@ -88,11 +88,12 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         title,
         phone,
         description,
-        date: finalDate,
+        date: finalDate, // 👈 deadline
+        priority,        // 👈 new field
         status: category || "todos",
-        userId: targetUserId, // 👈 Important
+        userId: targetUserId,
         createdAt: serverTimestamp(),
-        createdBy: currentUser.uid, // 👈 who added (client or self)
+        createdBy: currentUser.uid,
       });
 
       setTitle("");
@@ -101,6 +102,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       setDatePart(null);
       setTimePart("");
       setCategory(defaultCategory || "todos");
+      setPriority("medium");
 
       if (onTaskAdded) onTaskAdded();
       toast.success("Task added successfully!");
@@ -124,15 +126,16 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
       const result = await model.generateContent(`
       Extract task info from this text and return ONLY raw JSON with fields:
-      title, phone, description, date (ISO string), status (todos|in-process|done).
+      title, phone, description, date (ISO string), status (todos|in-process|done), priority (high|medium|low).
 
       Rules:
       - If user specifies a date/time → use that.
       - If no date mentioned → use today's date-time: "${today}".
+      - If no priority mentioned → default = "medium".
       - Always return ISO string (YYYY-MM-DDTHH:mm:ss) without timezone suffix.
 
       Example output:
-      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos"}
+      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos","priority":"high"}
 
       User text: "${prompt}"
     `);
@@ -161,9 +164,10 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         description: parsed.description,
         status: parsed.status || "todos",
         date: finalDate,
-        userId: targetUserId, // 👈 Important
+        priority: parsed.priority || "medium", // 👈 new field
+        userId: targetUserId,
         createdAt: serverTimestamp(),
-        createdBy: currentUser.uid, // 👈 who added (client or self)
+        createdBy: currentUser.uid,
       });
 
       setPrompt("");
@@ -258,6 +262,18 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             </SelectContent>
           </Select>
 
+          {/* Priority */}
+          <Select value={priority} onValueChange={(val) => setPriority(val)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button onClick={handleAddManual} className="w-full">
             Add Task
           </Button>
@@ -268,7 +284,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       {mode === "ai" && (
         <div className="space-y-3">
           <span className="text-neutral-400 text-sm font-light">
-            E.g : Call Sarthak today 10:00, Phone 7888986633 explain Social Media Marketing Campaign → In-Process
+            E.g : Call Sarthak today 10:00, Phone 7888986633 explain Social Media Marketing Campaign → In-Process High
           </span>
           <Textarea
             className={"mt-3"}

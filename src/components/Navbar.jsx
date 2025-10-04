@@ -16,7 +16,11 @@ function Navbar() {
     signOut(auth);
   };
 
-  // ✅ Helper for active link styling
+  // ✅ Extract userId from URL if admin is viewing user dashboard
+  const matchUserDashboard = location.pathname.match(/\/admin\/user\/([^/]+)/);
+  const viewedUserId = matchUserDashboard ? matchUserDashboard[1] : null;
+
+  // ✅ Active link helper
   const linkClasses = (path) =>
     `px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === path
       ? "bg-yellow-50 text-yellow-600"
@@ -24,17 +28,17 @@ function Navbar() {
     }`;
 
   return (
-    <nav className="w-full bg-white shadow-sm border-b border-gray-200">
+    <nav className="w-full bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link
           to="/"
-          className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors"
+          className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
         >
           <img src={Logo} alt="Octa_Tech_Logo" width={120} />
         </Link>
 
-        {/* Hamburger Button (Mobile) */}
+        {/* Hamburger (Mobile) */}
         <button
           className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
           onClick={() => setIsOpen(!isOpen)}
@@ -50,11 +54,23 @@ function Navbar() {
                 Home
               </Link>
 
-              {role === "user" && (
-                <Link to="/call-schedule" className={linkClasses("/call-schedule")}>
+              {(role === "user" || role === "admin") && (
+                <Link
+                  to={
+                    role === "admin"
+                      ? location.pathname.includes("/admin/user/") &&
+                        !location.pathname.includes("/call-schedule")
+                        ? `${location.pathname}/call-schedule`
+                        : location.pathname
+                      : "/call-schedule"
+                  }
+                  className={linkClasses("/call-schedule")}
+                >
                   Call Schedule
                 </Link>
               )}
+
+
 
               <Button
                 onClick={handleLogout}
@@ -79,7 +95,7 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ✅ Mobile Menu */}
       {isOpen && (
         <div className="md:hidden px-4 pb-4 flex flex-col gap-3 border-t border-gray-200 bg-white">
           {currentUser ? (
@@ -87,12 +103,24 @@ function Navbar() {
               <Link to="/" className={`${linkClasses("/")} w-fit`}>
                 Home
               </Link>
-
-              {role === "user" && (
-                <Link to="/call-schedule" className={`${linkClasses("/call-schedule")} w-fit`}>
+              
+              {(role === "user" || role === "admin") && (
+                <Link
+                  to={
+                    role === "admin"
+                      ? location.pathname.includes("/admin/user/") &&
+                        !location.pathname.includes("/call-schedule")
+                        ? `${location.pathname}/call-schedule`
+                        : location.pathname
+                      : "/call-schedule"
+                  }
+                  className={linkClasses("/call-schedule")}
+                >
                   Call Schedule
                 </Link>
               )}
+
+
 
               <Button
                 onClick={handleLogout}
