@@ -107,26 +107,26 @@ function Register() {
         <CardContent className="space-y-4">
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div>
-            <Label>Name</Label>
+            <Label className={'my-1'}>Name</Label>
             <Input type="text" placeholder="Enter your name" onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <Label>Email</Label>
+            <Label className={'my-1'}>Email</Label>
             <Input type="email" placeholder="Enter your email" onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <Label>Password</Label>
+            <Label className={'my-1'}>Password</Label>
             <Input type="password" placeholder="Enter your password" onChange={(e) => setPassword(e.target.value)} />
           </div>
 
           <div>
-            <Label>Role</Label>
+            <Label className={'my-1'}>Role</Label>
             <Select onValueChange={setRole} defaultValue="user">
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Developer</SelectItem>
+                <SelectItem value="user">Employee</SelectItem>
                 <SelectItem value="client">Client</SelectItem>
               </SelectContent>
             </Select>
@@ -135,10 +135,10 @@ function Register() {
           {/* ✅ Client ke liye devCode input */}
           {role === "client" && (
             <div>
-              <Label>Developer Code</Label>
+              <Label className={'mb-2'}>Employee Code</Label>
               <Input
                 type="text"
-                placeholder="Enter Developer Code"
+                placeholder="Enter Employee Code"
                 value={devCodeInput}
                 onChange={(e) => setDevCodeInput(e.target.value)}
               />

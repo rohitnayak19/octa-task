@@ -46,15 +46,23 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+    PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from "recharts";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Trash2, Edit, Plus, Search } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { subDays, subMonths, subYears, isWithinInterval } from "date-fns";
 import Navbar from "../components/Navbar";
+import { useParams } from "react-router-dom";
+
 
 function CallSchedule() {
-    const { currentUser } = useAuth();
+    const { userId } = useParams()
+    const { role, currentUser } = useAuth();
     const [calls, setCalls] = useState([]);
 
     // CRM fields
@@ -74,24 +82,31 @@ function CallSchedule() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [isOtherBusiness, setIsOtherBusiness] = useState(false);
 
-
-
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
+
+    const [statusRange, setStatusRange] = useState("7d");
+    const [statusCustomRange, setStatusCustomRange] = useState({ start: null, end: null });
+
+    const [businessRange, setBusinessRange] = useState("1m");
+    const [businessCustomRange, setBusinessCustomRange] = useState({ start: null, end: null });
+
 
     // Fetch calls
     const fetchCalls = async () => {
         try {
+            const targetUserId = role === "admin" && userId ? userId : currentUser?.uid;
             const callsRef = collection(db, "calls");
             const snapshot = await getDocs(query(callsRef, orderBy("date", "asc")));
             const list = snapshot.docs
                 .map((d) => ({ id: d.id, ...d.data() }))
-                .filter((c) => c.userId === currentUser.uid);
+                .filter((c) => c.userId === targetUserId);
             setCalls(list);
         } catch (e) {
             console.error("Error fetching calls:", e);
         }
     };
+
 
     useEffect(() => {
         fetchCalls();
@@ -215,6 +230,35 @@ function CallSchedule() {
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
+    const filterByRange = (calls, range, customRange) => {
+        const now = new Date();
+        return calls.filter((c) => {
+            const callDate = new Date(c.date?.seconds ? c.date.seconds * 1000 : c.date);
+
+            if (range === "7d") return callDate >= subDays(now, 7);
+            if (range === "1m") return callDate >= subMonths(now, 1);
+            if (range === "1y") return callDate >= subYears(now, 1);
+
+            if (
+                range === "custom" &&
+                customRange &&
+                customRange.start &&
+                customRange.end
+            ) {
+                return isWithinInterval(callDate, {
+                    start: customRange.start,
+                    end: customRange.end,
+                });
+            }
+
+            return true; // fallback if no filter
+        });
+    };
+
+    const filteredStatusCalls = filterByRange(calls, statusRange, statusCustomRange);
+    const filteredBusinessCalls = filterByRange(calls, businessRange, businessCustomRange);
+
 
     return (
         <>
@@ -574,6 +618,226 @@ function CallSchedule() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Charts Section */}
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Pie Chart by Status */}
+                    <Card>
+                        <div className="flex gap-2 mb-4">
+                            <Button variant={statusRange === "7d" ? "default" : "outline"} onClick={() => setStatusRange("7d")}>Last 7 Days</Button>
+                            <Button variant={statusRange === "1m" ? "default" : "outline"} onClick={() => setStatusRange("1m")}>Last 1 Month</Button>
+                            <Button variant={statusRange === "1y" ? "default" : "outline"} onClick={() => setStatusRange("1y")}>Last 1 Year</Button>
+
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant={statusRange === "custom" ? "default" : "outline"}>
+                                        {statusCustomRange?.start && statusCustomRange?.end
+                                            ? `${format(statusCustomRange.start, "MMM d")} - ${format(
+                                                statusCustomRange.end,
+                                                "MMM d, yyyy"
+                                            )}`
+                                            : "Custom Range"}
+                                    </Button>
+
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                    <Calendar
+                                        mode="range"
+                                        selected={statusCustomRange}
+                                        onSelect={(range) => {
+                                            setStatusCustomRange(range);
+                                            setStatusRange("custom");
+                                        }}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <CardHeader>
+                            <CardTitle>Leads by Status</CardTitle>
+                            <CardDescription>Distribution of leads</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={Object.entries(
+                                            filteredStatusCalls.reduce((acc, c) => {
+                                                acc[c.status] = (acc[c.status] || 0) + 1;
+                                                return acc;
+                                            }, {})
+                                        ).map(([status, value]) => ({ name: status, value }))}
+
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={50} // makes it a donut
+                                        outerRadius={100}
+                                        paddingAngle={3}
+                                        dataKey="value"
+                                        label={({ name, percent }) =>
+                                            `${name}: ${(percent * 100).toFixed(0)}%`
+                                        }
+                                    >
+                                        {[
+                                            "#60a5fa", // blue
+                                            "#4ade80", // green
+                                            "#facc15", // yellow
+                                            "#f97316", // orange
+                                            "#a78bfa", // purple
+                                            "#f87171", // red
+                                            "#94a3b8", // gray
+                                        ].map((color, index) => (
+                                            <Cell key={`cell-${index}`} fill={color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        className={'text-[2px'}
+                                        formatter={(value, name) => [`${value} Leads`, name]}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {/* Legends */}
+                            <div className="flex flex-wrap gap-3 justify-start mt-4">
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Converted</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Not Interested</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Interested</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Follow Up</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Service Follow Up</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">New Lead</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
+                                    <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                                    <span className="text-xs text-neutral-700 font-semibold">Call Not Connected</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    {/* Bar Chart by Business Type */}
+                    <Card>
+                        <CardHeader>
+                            {/* Filter Buttons */}
+                            <div className="flex gap-2 mb-4">
+                                <Button
+                                    variant={businessRange === "7d" ? "default" : "outline"}
+                                    onClick={() => setBusinessRange("7d")}
+                                >
+                                    Last 7 Days
+                                </Button>
+                                <Button
+                                    variant={businessRange === "1m" ? "default" : "outline"}
+                                    onClick={() => setBusinessRange("1m")}
+                                >
+                                    Last 1 Month
+                                </Button>
+                                <Button
+                                    variant={businessRange === "1y" ? "default" : "outline"}
+                                    onClick={() => setBusinessRange("1y")}
+                                >
+                                    Last 1 Year
+                                </Button>
+
+                                {/* Custom Range */}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant={businessRange === "custom" ? "default" : "outline"}>
+                                            {businessCustomRange?.start && businessCustomRange?.end
+                                                ? `${format(businessCustomRange.start, "MMM d")} - ${format(
+                                                    businessCustomRange.end,
+                                                    "MMM d, yyyy"
+                                                )}`
+                                                : "Custom Range"}
+                                        </Button>
+
+                                    </PopoverTrigger>
+                                    <PopoverContent>
+                                        <Calendar
+                                            mode="range"
+                                            selected={businessCustomRange}
+                                            onSelect={(range) => {
+                                                setBusinessCustomRange(range);
+                                                setBusinessRange("custom");
+                                            }}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <CardTitle>Leads by Business Type</CardTitle>
+                            <CardDescription>Comparison across businesses</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {/* Chart */}
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart
+                                    data={Object.entries(
+                                        filteredBusinessCalls.reduce((acc, c) => {
+                                            acc[c.businessType] = (acc[c.businessType] || 0) + 1;
+                                            return acc;
+                                        }, {})
+                                    ).map(([type, value]) => ({ name: type, value }))}
+                                    margin={{ top: 20, right: 20, left: 0, bottom: 40 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                    <XAxis
+                                        dataKey="name"
+                                        angle={-25}
+                                        textAnchor="end"
+                                        interval={0}
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip
+                                        cursor={{ fill: "rgba(0,0,0,0.05)" }}
+                                        formatter={(value) => [`${value} Leads`, ""]}
+                                        contentStyle={{
+                                            backgroundColor: "white",
+                                            borderRadius: "8px",
+                                            border: "1px solid #e5e7eb",
+                                        }}
+                                    />
+                                    <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                                        {Object.entries(
+                                            filteredBusinessCalls.reduce((acc, c) => {
+                                                acc[c.businessType] = (acc[c.businessType] || 0) + 1;
+                                                return acc;
+                                            }, {})
+                                        ).map(([type], index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={[
+                                                    "#3b82f6", // blue
+                                                    "#f97316", // orange
+                                                    "#22c55e", // green
+                                                    "#a855f7", // purple
+                                                    "#eab308", // yellow
+                                                    "#ef4444", // red
+                                                    "#06b6d4", // cyan
+                                                ][index % 7]}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </>
     );

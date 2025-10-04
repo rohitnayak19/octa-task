@@ -4,7 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import {
   doc,
+  query,
+  orderBy,
   collection,
+  getDoc,
   getDocs,
   addDoc,
   updateDoc,
@@ -66,9 +69,35 @@ function TodoItem({ todo, refreshTodos }) {
 
   const fetchComments = async () => {
     const commentsRef = collection(db, "todos", todo.id, "comments");
-    const snapshot = await getDocs(commentsRef);
-    setComments(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+    // 👇 Comments ko timestamp ke order me fetch karo
+    const q = query(commentsRef, orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+
+    const commentsData = await Promise.all(
+      snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        let userName = "Unknown";
+
+        if (data.userId) {
+          try {
+            const userRef = doc(db, "users", data.userId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              userName = userSnap.data().name || "Unnamed";
+            }
+          } catch (err) {
+            console.error("⚠️ Failed to fetch user name:", err);
+          }
+        }
+
+        return { id: docSnap.id, ...data, userName };
+      })
+    );
+
+    setComments(commentsData);
   };
+
 
   useEffect(() => {
     fetchComments();
@@ -95,17 +124,32 @@ function TodoItem({ todo, refreshTodos }) {
   };
 
   const handleAddComment = async () => {
-    if (!newComment) return;
+    if (!newComment.trim()) return;
+
     try {
+      const currentUser = auth.currentUser;
+
+      // ✅ Get user details from Firestore
+      let userName = "Anonymous";
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          userName = userSnap.data().name || "Unnamed";
+        }
+      }
+
       const commentsRef = collection(db, "todos", todo.id, "comments");
       await addDoc(commentsRef, {
         text: newComment,
-        by: role,
-        userId: auth.currentUser.uid,
+        by: role,                  // user / client
+        userId: currentUser.uid,   // Firestore ke liye reference
+        userName,                  // 👈 ab name bhi save hoga
         date: new Date().toLocaleString(),
+        createdAt: Timestamp.now(),
       });
 
-      toast.success("sComment added successfully!");
+      toast.success("Comment added successfully!");
       setNewComment("");
       fetchComments();
     } catch (error) {
@@ -130,7 +174,7 @@ function TodoItem({ todo, refreshTodos }) {
 
   // ✅ Helper: format Firestore timestamp or string to readable date
   const formatDate = (dateValue) => {
-    if (!dateValue) return "No date";
+    if (!dateValue) return null;
 
     let dateObj;
     if (dateValue.seconds) {
@@ -139,15 +183,54 @@ function TodoItem({ todo, refreshTodos }) {
       dateObj = new Date(dateValue);
     }
 
-    return dateObj.toLocaleString("en-IN", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    });
+    return dateObj;
+  };
+
+  // ✅ Helper: Deadline Badge
+  const renderDeadlineBadge = (dateValue) => {
+    if (!dateValue) return null;
+    const d = formatDate(dateValue);
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    let label = "";
+    let color = "";
+
+    if (d.toDateString() === today.toDateString()) {
+      label = "Today";
+      color = "bg-blue-100 text-blue-700";
+    } else if (d.toDateString() === tomorrow.toDateString()) {
+      label = "Tomorrow";
+      color = "bg-yellow-100 text-yellow-700";
+    } else if (d < today) {
+      label = "Overdue";
+      color = "bg-red-100 text-red-700";
+    } else {
+      label = "Upcoming";
+      color = "bg-gray-100 text-gray-700";
+    }
+
+    return (
+      <Badge className={`px-2 py-1 text-xs font-medium rounded-full ${color}`}>
+        {label}
+      </Badge>
+    );
+  };
+
+  // ✅ Helper: Priority Badge
+  const renderPriorityBadge = (priority) => {
+    if (!priority) return null;
+    let color = "bg-gray-100 text-gray-700";
+    if (priority === "high") color = "bg-red-100 text-red-700";
+    if (priority === "medium") color = "bg-yellow-100 text-yellow-700";
+    if (priority === "low") color = "bg-green-100 text-green-700";
+
+    return (
+      <Badge className={`px-2 py-1 text-xs font-medium rounded-full ${color}`}>
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </Badge>
+    );
   };
 
   return (
@@ -158,49 +241,54 @@ function TodoItem({ todo, refreshTodos }) {
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
           style={{
             backgroundImage: `
-        repeating-linear-gradient(
-          0deg, transparent, transparent 20px, rgba(75, 85, 99, 0.05) 20px, rgba(75, 85, 99, 0.05) 21px
-        ),
-        repeating-linear-gradient(
-          90deg, transparent, transparent 30px, rgba(107, 114, 128, 0.05) 30px, rgba(107, 114, 128, 0.05) 31px
-        ),
-        repeating-linear-gradient(
-          60deg, transparent, transparent 40px, rgba(55, 65, 81, 0.04) 40px, rgba(55, 65, 81, 0.04) 41px
-        ),
-        repeating-linear-gradient(
-          150deg, transparent, transparent 35px, rgba(31, 41, 55, 0.04) 35px, rgba(31, 41, 55, 0.04) 36px
-        )
-      `,
+              repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(75, 85, 99, 0.05) 20px, rgba(75, 85, 99, 0.05) 21px),
+              repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(107, 114, 128, 0.05) 30px, rgba(107, 114, 128, 0.05) 31px),
+              repeating-linear-gradient(60deg, transparent, transparent 40px, rgba(55, 65, 81, 0.04) 40px, rgba(55, 65, 81, 0.04) 41px),
+              repeating-linear-gradient(150deg, transparent, transparent 35px, rgba(31, 41, 55, 0.04) 35px, rgba(31, 41, 55, 0.04) 36px)
+            `,
           }}
         />
 
-        <CardContent className="relative z-10 p-6">
+        <CardContent className="relative z-10 px-3">
           {/* Title + Description */}
-          <h3 className="text-2xl font-semibold text-neutral-800">{todo.title}</h3>
+          <h3 className="text-2xl md:text-2xl font-semibold text-neutral-800">
+            {todo.title}
+          </h3>
           <p className="text-gray-600 text-md mt-1">{todo.description}</p>
 
-          {/* Badge + Date */}
-          <div className="flex items-center justify-between mt-3">
+          {/* Status + Deadline + Priority */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
             <Badge
-              className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
-                todo.status === "done"
-                  ? "bg-green-100 text-green-700"
-                  : todo.status === "in-process"
+              className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${todo.status === "done"
+                ? "bg-green-100 text-green-700"
+                : todo.status === "in-process"
                   ? "bg-orange-100 text-orange-700"
                   : "bg-gray-100 text-gray-700"
-              }`}
+                }`}
             >
               {todo.status === "done"
                 ? "Completed"
                 : todo.status === "in-process"
-                ? "In Progress"
-                : "Todo"}
+                  ? "In Progress"
+                  : "Todo"}
             </Badge>
 
+            {renderDeadlineBadge(todo.date)}
+            {renderPriorityBadge(todo.priority)}
+
+            {/* Actual Date */}
             <div className="flex items-center gap-2 px-3 py-1 text-xs bg-white/70 border rounded-md backdrop-blur-sm shadow-sm">
               <CalendarIcon size={16} className="text-gray-500" />
               <span className="font-medium text-sm text-neutral-700">
-                {formatDate(todo.date)}
+                {formatDate(todo.date)?.toLocaleString("en-IN", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                  timeZone: "Asia/Kolkata",
+                })}
               </span>
             </div>
           </div>
@@ -208,10 +296,12 @@ function TodoItem({ todo, refreshTodos }) {
           {/* Stats Row */}
           <div className="flex items-center gap-3 border-t mt-3 pt-2 text-sm text-gray-500">
             <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
-              <MessageSquare size={18} className="text-gray-500" /> {comments.length}
+              <MessageSquare size={18} className="text-gray-500" />{" "}
+              {comments.length}
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
-              <Phone size={18} className="text-gray-500" /> {todo.phone || 0}
+              <Phone size={18} className="text-gray-500" />{" "}
+              {todo.phone || "No Phone Number"}
             </div>
           </div>
 
@@ -229,8 +319,8 @@ function TodoItem({ todo, refreshTodos }) {
                   {todo.status === "todos"
                     ? "▶ Start Progress"
                     : todo.status === "in-process"
-                    ? "✔ Mark as Done"
-                    : "↩ Move to Todos"}
+                      ? "✔ Mark as Done"
+                      : "↩ Move to Todos"}
                 </Button>
 
                 {/* 🔽 Status Change Dropdown */}
@@ -289,7 +379,7 @@ function TodoItem({ todo, refreshTodos }) {
       {/* ✅ Edit Dialog for Developer */}
       {role !== "client" && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Edit Task + Comments</DialogTitle>
             </DialogHeader>
@@ -377,20 +467,31 @@ function TodoItem({ todo, refreshTodos }) {
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <MessageSquare size={16} /> Comments ({comments.length})
               </h4>
-              <div className="space-y-2 mt-3">
+              <div
+                className="space-y-3 mt-3 h-36 overflow-y-auto pr-2 
+             scrollbar-thin scrollbar-thumb-gray-300 
+             scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
+             rounded-md"
+              >
                 {comments.map((c) => (
                   <div
                     key={c.id}
-                    className="p-2 bg-gray-50 border rounded-md text-sm flex justify-between"
+                    className={`max-w-[75%] p-3 rounded-lg shadow text-sm mb-2 
+        ${c.userId === auth.currentUser.uid
+                        ? "ml-auto bg-blue-100 text-blue-800 text-right"
+                        : "mr-auto bg-gray-100 text-gray-800 text-left"
+                      }`}
                   >
-                    <div>
-                      <span className="font-medium text-blue-600">{c.by}</span>:{" "}
-                      {c.text}
-                      <div className="text-xs text-gray-400">{c.date}</div>
-                    </div>
+                    <p className="font-medium">{c.userName}</p>
+                    <p>{c.text}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {c.createdAt?.toDate().toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
+
+
               <div className="mt-3 flex gap-2">
                 <Input
                   value={newComment}
@@ -431,23 +532,33 @@ function TodoItem({ todo, refreshTodos }) {
       {/* ✅ Comment Dialog for Client */}
       {role === "client" && (
         <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Task Comments</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-2 mt-3">
+            <div className="space-y-3 mt-3 h-36 overflow-y-auto pr-2 
+             scrollbar-thin scrollbar-thumb-gray-300 
+             scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
+             rounded-md">
               {comments.map((c) => (
                 <div
                   key={c.id}
-                  className="p-2 bg-gray-50 border rounded-md text-sm"
+                  className={`max-w-[75%] p-3 rounded-lg shadow text-sm mb-2 ${c.userId === auth.currentUser.uid
+                    ? "ml-auto bg-blue-100 text-blue-800 text-right"
+                    : "mr-auto bg-gray-100 text-gray-800 text-left"
+                    }`}
                 >
-                  <span className="font-medium text-blue-600">{c.by}</span>:{" "}
-                  {c.text}
-                  <div className="text-xs text-gray-400">{c.date}</div>
+                  <p className="font-medium">{c.userName} :</p>
+                  <p>{c.text}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {c.createdAt?.toDate().toLocaleString()}
+                  </p>
                 </div>
               ))}
+
             </div>
+
             <div className="mt-3 flex gap-2">
               <Input
                 value={newComment}
@@ -469,4 +580,5 @@ function TodoItem({ todo, refreshTodos }) {
     </>
   );
 }
+
 export default TodoItem;

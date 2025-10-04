@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import TodoList from "../components/TodoList";
-import AddTodoForm from "../components/AddTodoForm"; 
+import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Trash2, Plus } from "lucide-react";
@@ -16,12 +16,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Navbar from "../components/Navbar";
 
 function UserDashboard() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("todos"); // ✅ track active tab
+  const [activeTab, setActiveTab] = useState("todos");
+  const [developer, setDeveloper] = useState(null)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -29,7 +31,17 @@ function UserDashboard() {
         const userRef = doc(db, "users", userId);
         const snapshot = await getDoc(userRef);
         if (snapshot.exists()) {
-          setUser({ id: userId, ...snapshot.data() });
+          const data = { id: userId, ...snapshot.data() };
+          setUser(data);
+
+          // 🔥 Agar client hai aur linkedUserId hai → dev ka naam fetch karo
+          if (data.role === "client" && data.linkedUserId) {
+            const devRef = doc(db, "users", data.linkedUserId);
+            const devSnap = await getDoc(devRef);
+            if (devSnap.exists()) {
+              setDeveloper({ id: devSnap.id, ...devSnap.data() });
+            }
+          }
         }
       } catch (error) {
         console.error("❌ Failed to fetch user:", error);
@@ -38,6 +50,7 @@ function UserDashboard() {
 
     fetchUser();
   }, [userId]);
+
 
   // ✅ Approve client
   const handleApprove = async (client) => {
@@ -52,6 +65,7 @@ function UserDashboard() {
     const clientRef = doc(db, "users", client.id);
     await updateDoc(clientRef, { status: "approved" });
 
+    toast.success("Client approved!");
     window.location.reload();
   };
 
@@ -68,10 +82,11 @@ function UserDashboard() {
     const clientRef = doc(db, "users", client.id);
     await updateDoc(clientRef, { status: "rejected" });
 
+    toast.error("Client rejected!");
     window.location.reload();
   };
 
-  // ✅ Delete client
+  // ✅ Remove client
   const handleDelete = async (client) => {
     const userRef = doc(db, "users", userId);
     await updateDoc(userRef, {
@@ -84,6 +99,7 @@ function UserDashboard() {
       status: "removed",
     });
 
+    toast.success("Client removed!");
     window.location.reload();
   };
 
@@ -94,7 +110,82 @@ function UserDashboard() {
     { key: "clients", label: "Clients" },
   ];
 
+  // ✅ If role is client → show only client details
+  if (user?.role === "client") {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            onClick={() => navigate(-1)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} /> Back
+          </Button>
+          <h2 className="text-2xl font-bold">Client Details</h2>
+        </div>
+
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold">{user.name}</h3>
+          <p className="text-gray-600">{user.email}</p>
+
+          <p className="mt-2">
+            Status:{" "}
+            <span
+              className={
+                user.status === "approved"
+                  ? "text-green-600"
+                  : user.status === "pending"
+                    ? "text-yellow-600"
+                    : "text-red-600"
+              }
+            >
+              {user.status}
+            </span>
+          </p>
+
+          {developer ? (
+            <p className="mt-2">
+              Linked Developer: <strong>{developer.name || "Unnamed"}</strong>
+              <span className="text-gray-500 text-sm"> ({developer.id})</span>
+            </p>
+          ) : (
+            <p className="mt-2 text-gray-500">Not linked to any developer</p>
+          )}
+
+
+          {/* ✅ Admin Actions */}
+          <div className="flex gap-2 mt-4">
+            {user.status === "pending" && (
+              <>
+                <Button onClick={() => handleApprove(user)}>Approve</Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleReject(user)}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+            {user.status === "approved" && (
+              <Button
+                variant="outline"
+                onClick={() => handleDelete(user)}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // ✅ If role is user → show full developer dashboard
   return (
+    <>
+    <Navbar/>
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <Button
@@ -112,7 +203,7 @@ function UserDashboard() {
         {user?.devCode && (
           <div className="mt-2 flex items-center gap-2">
             <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-              Dev Code: {user.devCode}
+              Employee Code: {user.devCode}
             </span>
             <Button
               size="sm"
@@ -140,7 +231,7 @@ function UserDashboard() {
             <DialogTitle>Add New Task</DialogTitle>
           </DialogHeader>
           <AddTodoForm
-            defaultCategory={activeTab} // 👈 active tab ke hisaab se
+            defaultCategory={activeTab}
             overrideUserId={userId}
           />
         </DialogContent>
@@ -195,8 +286,8 @@ function UserDashboard() {
                               client.status === "approved"
                                 ? "text-green-600"
                                 : client.status === "rejected"
-                                ? "text-red-600"
-                                : "text-yellow-600"
+                                  ? "text-red-600"
+                                  : "text-yellow-600"
                             }
                           >
                             {client.status}
@@ -238,6 +329,7 @@ function UserDashboard() {
         </TabsContent>
       </Tabs>
     </div>
+    </>
   );
 }
 
