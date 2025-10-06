@@ -31,10 +31,26 @@ export default defineConfig({
             type: 'image/png'
           },
           {
-            src: '/icons/maskable-icon-512x512.png',
+            src: '/icons/icon-maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: "/screenshots/home-mobile.png",
+            sizes: "540x974",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Mobile task dashboard"
+          },
+          {
+            src: "/screenshots/home-desktop.png",
+            sizes: "1200x643",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Desktop workspace overview"
           }
         ]
       },
