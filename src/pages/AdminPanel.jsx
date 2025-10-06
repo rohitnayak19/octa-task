@@ -65,8 +65,8 @@ function AdminPanel() {
 
   return (
     <>
-      <nav>
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+      <nav className="shadow-sm">
+        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-3">
           <Link
             to="/"
             className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"

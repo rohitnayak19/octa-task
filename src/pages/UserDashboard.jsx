@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, writeBatch, arrayRemove, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
@@ -44,64 +44,135 @@ function UserDashboard() {
           }
         }
       } catch (error) {
-        console.error("❌ Failed to fetch user:", error);
+        console.error("Failed to fetch user:", error);
       }
     };
 
     fetchUser();
   }, [userId]);
 
+// ✅ Helper to update developer's client array safely
+const updateDeveloperClientStatus = async (developerId, clientId, status) => {
+  const devRef = doc(db, "users", developerId);
+  const devSnap = await getDoc(devRef);
 
-  // ✅ Approve client
+  if (!devSnap.exists()) return;
+
+  const devData = devSnap.data();
+  const updatedClients = (devData.clients || []).map((c) =>
+    c.id === clientId ? { ...c, status } : c
+  );
+
+  await updateDoc(devRef, { clients: updatedClients });
+};
+  // ✅ Approve
   const handleApprove = async (client) => {
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, {
-      clients: arrayUnion({ ...client, status: "approved" }),
-    });
-    await updateDoc(userRef, {
-      clients: arrayRemove(client),
-    });
-
+  try {
     const clientRef = doc(db, "users", client.id);
-    await updateDoc(clientRef, { status: "approved" });
+    const clientSnap = await getDoc(clientRef);
 
-    toast.success("Client approved!");
-    window.location.reload();
-  };
+    if (!clientSnap.exists()) {
+      toast.error("Client not found");
+      return;
+    }
 
-  // ✅ Reject client
-  const handleReject = async (client) => {
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, {
-      clients: arrayUnion({ ...client, status: "rejected" }),
-    });
-    await updateDoc(userRef, {
-      clients: arrayRemove(client),
-    });
+    // Get developer linked to this client
+    const clientData = clientSnap.data();
+    const developerId = clientData.linkedUserId || client.linkedUserId;
 
+    if (!developerId) {
+      toast.error("No linked developer found for this client");
+      return;
+    }
+
+    // Get developer’s data
+    const devRef = doc(db, "users", developerId);
+    const devSnap = await getDoc(devRef);
+    if (!devSnap.exists()) return;
+
+    const devData = devSnap.data();
+    const updatedClients = (devData.clients || []).map((c) =>
+      c.id === client.id ? { ...c, status: "approved" } : c
+    );
+
+    // Use Firestore batch to update both docs atomically
+    const batch = writeBatch(db);
+    batch.update(clientRef, { status: "approved", linkedUserId: developerId });
+    batch.update(devRef, { clients: updatedClients });
+    await batch.commit();
+
+    toast.success("✅ Client approved!");
+  } catch (err) {
+    console.error("Approval error:", err);
+    toast.error("Approval failed");
+  }
+};
+
+
+  // ✅ Reject
+ const handleReject = async (client) => {
+  try {
     const clientRef = doc(db, "users", client.id);
-    await updateDoc(clientRef, { status: "rejected" });
+    const clientSnap = await getDoc(clientRef);
+    if (!clientSnap.exists()) return;
+
+    const clientData = clientSnap.data();
+    const developerId = clientData.linkedUserId || client.linkedUserId;
+    if (!developerId) return;
+
+    const devRef = doc(db, "users", developerId);
+    const devSnap = await getDoc(devRef);
+    if (!devSnap.exists()) return;
+
+    const devData = devSnap.data();
+    const updatedClients = (devData.clients || []).map((c) =>
+      c.id === client.id ? { ...c, status: "rejected" } : c
+    );
+
+    const batch = writeBatch(db);
+    batch.update(clientRef, { status: "rejected" });
+    batch.update(devRef, { clients: updatedClients });
+    await batch.commit();
 
     toast.error("Client rejected!");
-    window.location.reload();
-  };
+  } catch (err) {
+    console.error("Rejection error:", err);
+    toast.error("Rejection failed");
+  }
+};
 
-  // ✅ Remove client
-  const handleDelete = async (client) => {
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, {
-      clients: arrayRemove(client),
-    });
-
+  // ✅ Remove
+ const handleDelete = async (client) => {
+  try {
     const clientRef = doc(db, "users", client.id);
-    await updateDoc(clientRef, {
-      linkedUserId: null,
-      status: "removed",
-    });
+    const clientSnap = await getDoc(clientRef);
+    if (!clientSnap.exists()) return;
+
+    const clientData = clientSnap.data();
+    const developerId = clientData.linkedUserId || client.linkedUserId;
+    if (!developerId) return;
+
+    const devRef = doc(db, "users", developerId);
+    const devSnap = await getDoc(devRef);
+    if (!devSnap.exists()) return;
+
+    const devData = devSnap.data();
+    const updatedClients = (devData.clients || []).filter(
+      (c) => c.id !== client.id
+    );
+
+    const batch = writeBatch(db);
+    batch.update(clientRef, { status: "removed", linkedUserId: null });
+    batch.update(devRef, { clients: updatedClients });
+    await batch.commit();
 
     toast.success("Client removed!");
-    window.location.reload();
-  };
+  } catch (err) {
+    console.error("Removal error:", err);
+    toast.error("Removal failed");
+  }
+};
+
 
   const tabs = [
     { key: "todos", label: "Todos" },
@@ -185,150 +256,150 @@ function UserDashboard() {
   // ✅ If role is user → show full developer dashboard
   return (
     <>
-    <Navbar/>
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <Button
-          onClick={() => navigate(-1)}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} /> Back
-        </Button>
-        <h2 className="text-2xl font-bold">
-          📋 User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
-        </h2>
-
-        {user?.devCode && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-              Employee Code: {user.devCode}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(user.devCode);
-                toast.success("Developer Code copied!");
-              }}
-            >
-              Copy
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* ✅ Add Task Button + Dialog */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="my-2">
-            <Plus size={20} /> Add Task
+      <Navbar />
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            onClick={() => navigate(-1)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} /> Back
           </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Task</DialogTitle>
-          </DialogHeader>
-          <AddTodoForm
-            defaultCategory={activeTab}
-            overrideUserId={userId}
-          />
-        </DialogContent>
-      </Dialog>
+          <h2 className="text-2xl font-bold">
+            📋 User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
+          </h2>
 
-      <Tabs defaultValue="todos" onValueChange={(val) => setActiveTab(val)}>
-        <TabsList className="grid grid-cols-4 w-full mb-4">
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.key} value={tab.key}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          {user?.devCode && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                Manager Code: {user.devCode}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(user.devCode);
+                  toast.success("Developer Code copied!");
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          )}
+        </div>
 
-        {/* ✅ Task Tabs */}
-        {tabs
-          .filter((t) => t.key !== "clients")
-          .map((tab) => (
-            <TabsContent key={tab.key} value={tab.key}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{tab.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TodoList activeTab={tab.key} userId={userId} isAdmin />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
+        {/* ✅ Add Task Button + Dialog */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="my-2">
+              <Plus size={20} /> Add Task
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Task</DialogTitle>
+            </DialogHeader>
+            <AddTodoForm
+              defaultCategory={activeTab}
+              overrideUserId={userId}
+            />
+          </DialogContent>
+        </Dialog>
 
-        {/* ✅ Clients Tab */}
-        <TabsContent value="clients">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clients</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {user?.clients?.length ? (
-                <ul className="space-y-4">
-                  {user.clients.map((client, idx) => (
-                    <li
-                      key={idx}
-                      className="flex justify-between items-center border p-3 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-bold">{client.name}</p>
-                        <p className="text-sm text-gray-600">{client.email}</p>
-                        <p className="text-xs">
-                          Status:{" "}
-                          <span
-                            className={
-                              client.status === "approved"
-                                ? "text-green-600"
-                                : client.status === "rejected"
-                                  ? "text-red-600"
-                                  : "text-yellow-600"
-                            }
-                          >
-                            {client.status}
-                          </span>
-                        </p>
-                      </div>
+        <Tabs defaultValue="todos" onValueChange={(val) => setActiveTab(val)}>
+          <TabsList className="grid grid-cols-4 w-full mb-4">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.key} value={tab.key}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-                      <div className="flex gap-2">
-                        {client.status === "pending" && (
-                          <>
-                            <Button size="sm" onClick={() => handleApprove(client)}>
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleReject(client)}
+          {/* ✅ Task Tabs */}
+          {tabs
+            .filter((t) => t.key !== "clients")
+            .map((tab) => (
+              <TabsContent key={tab.key} value={tab.key}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{tab.label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TodoList activeTab={tab.key} userId={userId} isAdmin />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            ))}
+
+          {/* ✅ Clients Tab */}
+          <TabsContent value="clients">
+            <Card>
+              <CardHeader>
+                <CardTitle>Clients</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {user?.clients?.length ? (
+                  <ul className="space-y-4">
+                    {user.clients.map((client, idx) => (
+                      <li
+                        key={idx}
+                        className="flex justify-between items-center border p-3 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-bold">{client.name}</p>
+                          <p className="text-sm text-gray-600">{client.email}</p>
+                          <p className="text-xs">
+                            Status:{" "}
+                            <span
+                              className={
+                                client.status === "approved"
+                                  ? "text-green-600"
+                                  : client.status === "rejected"
+                                    ? "text-red-600"
+                                    : "text-yellow-600"
+                              }
                             >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(client)}
-                        >
-                          <Trash2 stroke="red" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500">No clients yet.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+                              {client.status}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {client.status === "pending" && (
+                            <>
+                              <Button size="sm" onClick={() => handleApprove(client)}>
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleReject(client)}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(client)}
+                          >
+                            <Trash2 stroke="red" />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500">No clients yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </>
   );
 }

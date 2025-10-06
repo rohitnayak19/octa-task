@@ -21,6 +21,18 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+import {
   MessageSquare,
   Trash2,
   Calendar as CalendarIcon,
@@ -57,6 +69,7 @@ function TodoItem({ todo, refreshTodos }) {
 
   // ✅ Edit state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false); // for client comment
   const [editTitle, setEditTitle] = useState(todo.title);
   const [editPhone, setEditPhone] = useState(todo.phone);
@@ -117,7 +130,7 @@ function TodoItem({ todo, refreshTodos }) {
     refreshTodos();
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
     if (role === "client") return;
     await deleteDoc(doc(db, "todos", todo.id));
     refreshTodos();
@@ -235,7 +248,9 @@ function TodoItem({ todo, refreshTodos }) {
 
   return (
     <>
-      <Card className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
+      <Card onClick={() => {
+        if(!isAlertOpen) setIsDialogOpen(true)
+        }} className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer">
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
@@ -342,19 +357,41 @@ function TodoItem({ todo, refreshTodos }) {
                   </SelectContent>
                 </Select>
 
-                <Button
-                  onClick={handleDelete}
-                  variant="outline"
-                  size="sm"
-                  className="hover:bg-red-50 hover:text-red-600 transition"
-                >
-                  <Trash2 size={16} stroke="red" />
-                </Button>
+                <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                    onClick={(e) => e.stopPropagation()}
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
+                    >
+                      <Trash2 size={16} stroke="red" />
+                    </Button>
+                  </AlertDialogTrigger>
+
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to delete this task?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. The task and its comments will be permanently removed.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
                 <Button
                   onClick={() => setIsDialogOpen(true)}
                   variant="secondary"
                   size="sm"
-                  className="hover:bg-gray-200 transition"
+                  className="hover:bg-gray-200 transition cursor-pointer"
                 >
                   <SquarePen size={16} /> Edit
                 </Button>
@@ -537,7 +574,7 @@ function TodoItem({ todo, refreshTodos }) {
               <DialogTitle>Task Comments</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-3 mt-3 h-36 overflow-y-auto pr-2 
+            <div className="space-y-3 mt-3 h-fit overflow-y-auto pr-2 
              scrollbar-thin scrollbar-thumb-gray-300 
              scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
              rounded-md">
@@ -549,7 +586,7 @@ function TodoItem({ todo, refreshTodos }) {
                     : "mr-auto bg-gray-100 text-gray-800 text-left"
                     }`}
                 >
-                  <p className="font-medium">{c.userName} :</p>
+                  <p className="font-medium">{c.userName}.</p>
                   <p>{c.text}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {c.createdAt?.toDate().toLocaleString()}
