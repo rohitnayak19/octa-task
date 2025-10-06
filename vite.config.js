@@ -38,21 +38,21 @@ export default defineConfig({
           }
         ],
         screenshots: [
-    {
-      src: "/screenshots/home-mobile.png",
-      sizes: "540x720",
-      type: "image/png",
-      form_factor: "narrow",
-      label: "Mobile task dashboard"
-    },
-    {
-      src: "/screenshots/home-desktop.png",
-      sizes: "1280x720",
-      type: "image/png",
-      form_factor: "wide",
-      label: "Desktop workspace overview"
-    }
-  ]
+          {
+            src: "/screenshots/home-mobile.png",
+            sizes: "540x974",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Mobile task dashboard"
+          },
+          {
+            src: "/screenshots/home-desktop.png",
+            sizes: "1200x643",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Desktop workspace overview"
+          }
+        ]
       },
       workbox: {
         cleanupOutdatedCaches: true,
