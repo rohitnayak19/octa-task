@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { Plus, Check, X, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../firebase";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, getDoc } from "firebase/firestore";
 
 // ✅ shadcn ui imports
 import { Button } from "@/components/ui/button";
@@ -35,19 +35,20 @@ function Home() {
   const [clients, setClients] = useState([]);
 
   // 🔹 Listen for realtime updates from Firestore
-  useEffect(() => {
-    if (!currentUser) return;
+useEffect(() => {
+  if (!currentUser) return;
+  const devRef = doc(db, "users", currentUser.uid);
+  const unsubscribe = onSnapshot(devRef, (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      console.log("Realtime Update:", data.clients);
+      setClients(data.clients || []);
+    }
+  });
+  return () => unsubscribe();
+}, [currentUser]);
 
-    const devRef = doc(db, "users", currentUser.uid);
-    const unsubscribe = onSnapshot(devRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setClients(data.clients || []); // realtime update clients
-      }
-    });
 
-    return () => unsubscribe();
-  }, [currentUser]);
 
   const tabs = [
     { key: "todos", label: "Todo" },
@@ -66,30 +67,33 @@ function Home() {
     }
   };
 
-  // 🔹 handle action approved/reject/delete
   const handleClientAction = async (clientId, action) => {
     try {
       const devRef = doc(db, "users", currentUser.uid);
       const clientRef = doc(db, "users", clientId);
 
-      // 1️⃣ Update developer's clients array locally
-      let updatedClients = clients
-        .map((c) =>
-          c.id === clientId
-            ? action === "delete"
-              ? null
-              : { ...c, status: action }
-            : c
-        )
-        .filter(Boolean);
+      // ✅ Fetch fresh developer document (to avoid stale state)
+      const devSnap = await getDoc(devRef);
+      if (!devSnap.exists()) return;
+      const devData = devSnap.data();
+
+      let updatedClients = [...(devData.clients || [])];
+
+      if (action === "delete") {
+        updatedClients = updatedClients.filter((c) => c.id !== clientId);
+      } else {
+        updatedClients = updatedClients.map((c) =>
+          c.id === clientId ? { ...c, status: action } : c
+        );
+      }
 
       await updateDoc(devRef, { clients: updatedClients });
 
-      // 2️⃣ Update client's own document
+      // ✅ Update client’s own document
       if (action === "approved") {
         await updateDoc(clientRef, {
           status: "approved",
-          linkedUserId: currentUser.uid, // link developer
+          linkedUserId: currentUser.uid,
         });
       } else if (action === "rejected") {
         await updateDoc(clientRef, { status: "rejected" });
@@ -100,7 +104,9 @@ function Home() {
         });
       }
 
-      toast.success(`Client ${action === "delete" ? "deleted" : action}`);
+      toast.success(
+        `Client ${action === "delete" ? "removed" : action} successfully!`
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to update client");
@@ -130,7 +136,7 @@ function Home() {
               {role === "user" && currentUser.devCode && (
                 <div className="flex items-center gap-2 bg-neutral-100 px-3 py-1 rounded-md">
                   <span className="text-sm font-medium">
-                    Employee Code: <span className="font-mono">{currentUser.devCode}</span>
+                    Manager Code: <span className="font-mono">{currentUser.devCode}</span>
                   </span>
                   <Button
                     className="active:scale-105"
@@ -225,13 +231,12 @@ function Home() {
                                   <p className="font-medium">{client.name}</p>
                                   <p className="text-sm text-gray-500">{client.email}</p>
                                   <Badge
-                                    className={`mt-1 ${
-                                      client.status === "approved"
+                                    className={`mt-1 ${client.status === "approved"
                                         ? "bg-green-100 text-green-700"
                                         : client.status === "rejected"
-                                        ? "bg-red-100 text-red-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }`}
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-yellow-100 text-yellow-700"
+                                      }`}
                                   >
                                     {client.status}
                                   </Badge>
@@ -294,5 +299,4 @@ function Home() {
     </div>
   );
 }
-
 export default Home;

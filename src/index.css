@@ -120,3 +120,7 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* .t4s-section-title t4s-title{
+  font-size: 40px !important;
+} */

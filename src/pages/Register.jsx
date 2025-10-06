@@ -126,7 +126,7 @@ function Register() {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Employee</SelectItem>
+                <SelectItem value="user">Manager</SelectItem>
                 <SelectItem value="client">Client</SelectItem>
               </SelectContent>
             </Select>
@@ -135,10 +135,10 @@ function Register() {
           {/* ✅ Client ke liye devCode input */}
           {role === "client" && (
             <div>
-              <Label className={'mb-2'}>Employee Code</Label>
+              <Label className={'mb-2'}>Manager Code</Label>
               <Input
                 type="text"
-                placeholder="Enter Employee Code"
+                placeholder="Enter Manager Code"
                 value={devCodeInput}
                 onChange={(e) => setDevCodeInput(e.target.value)}
               />

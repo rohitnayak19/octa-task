@@ -66,7 +66,7 @@ function Navbar() {
                   }
                   className={linkClasses("/call-schedule")}
                 >
-                  Call Schedule
+                  Schedule Call 
                 </Link>
               )}
 

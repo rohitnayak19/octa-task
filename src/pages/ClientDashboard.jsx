@@ -6,10 +6,13 @@ import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, LogOut, MoveRight, Plus } from "lucide-react";
+import { Loader2, LogOut, MoveRight, Plus, Clock } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Logo from "../assets/OctaTech_Logo.webp";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -83,137 +86,255 @@ function ClientDashboard() {
   }
 
   if (!clientInfo) {
-    return <p className="text-center mt-10 text-red-600">❌ Client record not found.</p>;
+    return <p className="text-center mt-10 text-red-600">Client record not found.</p>;
   }
 
   if (clientInfo.status === "pending") {
     return (
-      <div className="flex flex-col items-center mt-20">
-        <h2 className="text-xl font-bold">⏳ Waiting for approval</h2>
-        <p className="text-gray-600 mt-2">
-          Your developer has not approved your access yet.
-        </p>
-        <Button onClick={handleLogout} variant="outline" className="mt-2 text-red-600">
-          <LogOut /> Logout
-        </Button>
-      </div>
+      <>
+        <nav className="shadow-sm p-2">
+          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+            <Link
+              to="/"
+              className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
+            >
+              <img src={Logo} alt="Octa_Tech_Logo" width={120} />
+            </Link>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="mt-2 cursor-pointer flex items-center gap-2 active:scale-105"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </Button>
+          </div>
+        </nav>
+        <div className="flex flex-col items-center justify-center min-h-96 px-4">
+          <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-4xl text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
+                <Clock className="w-6 h-6" />
+              </div>
+
+              <h2 className="text-2xl font-semibold text-gray-800">Waiting for Approval</h2>
+              <p className="text-gray-600">
+                Your manager has not approved your access yet. You’ll be notified once it’s approved.
+              </p>
+
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="mt-2 text-gray-600 hover:text-red-600 border-gray-300"
+              >
+                <LogOut className="mr-2" /> Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+
+      </>
     );
   }
 
   if (clientInfo.status === "rejected") {
     return (
-      <div className="flex flex-col items-center mt-20">
-        <h2 className="text-xl font-bold text-red-600">Access Rejected </h2>
-        <p className="text-gray-600 mt-2">
-          Your developer has rejected your request. Please contact them.
-        </p>
-        <div className="flex gap-1">
-          <Button
-            onClick={() => navigate("/link-developer")}
-            variant="outline"
-            className="group"
-          >
-            Request Again
-            <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
-          </Button>
-          <Button onClick={handleLogout} variant="outline" className="text-red-500 hover:text-red-600">
-            <LogOut /> Logout
-          </Button>
+      <>
+        <nav className="shadow-sm p-2">
+          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+            <Link
+              to="/"
+              className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
+            >
+              <img src={Logo} alt="Octa_Tech_Logo" width={120} />
+            </Link>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="mt-2 cursor-pointer flex items-center gap-2 active:scale-105"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </Button>
+          </div>
+        </nav>
+        <div className="flex flex-col items-center justify-center min-h-96 px-4">
+          <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-4xl text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="bg-red-100 text-red-600 p-3 rounded-full">
+                <MoveRight className="w-6 h-6" />
+              </div>
+
+              <h2 className="text-2xl font-semibold text-gray-800">Access Request Denied</h2>
+              <p className="text-gray-600">
+                Your manager has not approved your access request. You can try again or contact them for assistance.
+              </p>
+
+              <div className="flex gap-2 justify-center mt-4">
+                <Button
+                variant={'outline'}
+                  onClick={() => navigate("/link-developer")}
+                  className="group transition-all"
+                >
+                  Request Again
+                  <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="text-gray-600 hover:text-red-600 border-gray-300"
+                >
+                  <LogOut className="mr-2" /> Logout
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+
+      </>
     );
   }
 
   if (clientInfo.status === "removed") {
     return (
-      <div className="flex flex-col items-center mt-20">
-        <h2 className="text-xl font-bold text-red-600">Removed by Developer</h2>
-        <p className="text-gray-600 mt-2 mb-4">
-          Your developer has removed your access. You can request again using a Developer Code.
-        </p>
-        <div className="flex gap-1">
-          <Button
-            onClick={() => navigate("/link-developer")}
-            variant="outline"
-            className="group"
-          >
-            Request Again
-            <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
-          </Button>
-          <Button onClick={handleLogout} variant="outline" className="text-red-500 hover:text-red-600">
-            <LogOut /> Logout
-          </Button>
+      <>
+        <nav className="shadow-sm p-2">
+          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+            <Link
+              to="/"
+              className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
+            >
+              <img src={Logo} alt="Octa_Tech_Logo" width={120} />
+            </Link>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="mt-2 cursor-pointer flex items-center gap-2 active:scale-105"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </Button>
+          </div>
+        </nav>
+        <div className="flex flex-col items-center justify-center min-h-96 px-4">
+          <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-4xl text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="bg-red-100 text-red-500 p-3 rounded-full">
+                <LogOut className="w-6 h-6" />
+              </div>
+
+              <h2 className="text-2xl font-semibold text-gray-800">Access Removed</h2>
+              <p className="text-gray-600">
+                Your manager has temporarily removed your access. You can request access again using a manager code.
+              </p>
+
+              <div className="flex gap-2 justify-center mt-4">
+                <Button
+                  variant={'ghost'}
+                  onClick={() => navigate("/link-developer")}
+                  className="transition-all border border-red-200"
+                >
+                  Request Access
+                  <MoveRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="text-gray-600 hover:text-red-400 border-gray-300"
+                >
+                  <LogOut className="mr-2" /> Logout
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
-
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          👤 Client Dashboard – {clientInfo.name || currentUser.email}
-        </h2>
-        <Button onClick={handleLogout} variant="outline">
-          <LogOut /> Logout
-        </Button>
-      </div>
-
-      {developerData && (
-        <p className="text-gray-600 mb-4">
-          Linked Developer: <strong>{developerData.name}</strong>
-        </p>
-      )}
-
-      {/* ✅ Add Task (Client → Developer) */}
-      {developerData && (
-        <div className="mb-6">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus size={16} /> Add Task for Developer
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add a new Task</DialogTitle>
-              </DialogHeader>
-              <AddTodoForm
-                defaultCategory="todos"
-                overrideUserId={developerData.id}
-                onTaskAdded={() => setIsDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+    <>
+      <nav className="shadow-sm p-1">
+        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+          <Link
+            to="/"
+            className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
+          >
+            <img src={Logo} alt="Octa_Tech_Logo" width={120} />
+          </Link>
+          <h2 className="text-2xl font-semibold text-neutral-700">
+            Client Dashboard – {clientInfo.name || currentUser.email}
+          </h2>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="mt-2 cursor-pointer flex items-center gap-2 active:scale-105"
+          >
+            <LogOut size={16} />
+            <span>Logout</span>
+          </Button>
         </div>
-      )}
+      </nav>
+      <div className="p-6 max-w-7xl mx-auto">
+        {developerData && (
+          <p className="text-gray-600 mb-4">
+            Linked Manager: <strong>{developerData.name}</strong>
+          </p>
+        )}
 
-      <Tabs defaultValue="todos">
-        <TabsList className="grid grid-cols-3 w-full mb-4">
+        {/* ✅ Add Task (Client → Developer) */}
+        {developerData && (
+          <div className="mb-6">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus size={16} /> Add Task for Manager
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add a new Task</DialogTitle>
+                </DialogHeader>
+                <AddTodoForm
+                  defaultCategory="todos"
+                  overrideUserId={developerData.id}
+                  onTaskAdded={() => setIsDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        <Tabs defaultValue="todos">
+          <TabsList className="grid grid-cols-3 w-full mb-4">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.key} value={tab.key}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {tabs.map((tab) => (
-            <TabsTrigger key={tab.key} value={tab.key}>
-              {tab.label}
-            </TabsTrigger>
+            <TabsContent key={tab.key} value={tab.key}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{tab.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {developerData ? (
+                    <TodoList activeTab={tab.key} userId={developerData.id} />
+                  ) : (
+                    <p className="text-gray-500">No Manager data found.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           ))}
-        </TabsList>
-        {tabs.map((tab) => (
-          <TabsContent key={tab.key} value={tab.key}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{tab.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {developerData ? (
-                  <TodoList activeTab={tab.key} userId={developerData.id} />
-                ) : (
-                  <p className="text-gray-500">No developer data found.</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+        </Tabs>
+      </div>
+    </>
   );
 }
 
