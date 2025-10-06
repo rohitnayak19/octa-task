@@ -3,9 +3,25 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>octa-task</title>
+
+  <!-- ✅ App Title & Description -->
+  <title>OctaTech Task</title>
+  <meta name="description" content="A modern task management system built by OctaTech using React, Firebase & Tailwind." />
+
+  <!-- ✅ Favicon (browser tab + fallback) -->
+  <link rel="icon" type="image/x-icon" href="/OctaIcon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-192x192.png" />
+
+  <!-- ✅ App Icons (for PWA install & Apple devices) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-512x512.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <!-- ✅ Theme color for mobile browsers -->
+  <meta name="theme-color" content="#0f172a" />
+
+  <!-- ✅ Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -15,7 +31,18 @@
 
 <body>
   <div id="root"></div>
+
+  <!-- ✅ Main React Entry -->
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- ✅ Optional: Fallback service worker register -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
 </body>
 
 </html>
