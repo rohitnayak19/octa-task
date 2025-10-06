@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Important: ignore environment files
+# Important: ignore environment filess
 .env
 .env.local
 .env.production
