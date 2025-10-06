@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Firebase config (aapka project ka)
 const firebaseConfig = {
-  apiKey: "AIzaSyDka1qOel3sNq_Zb6_k9lIKx3fXwxtq9Ik",
-  authDomain: "octa-task-7c2f2.firebaseapp.com",
-  projectId: "octa-task-7c2f2",
-  storageBucket: "octa-task-7c2f2.appspot.com",
-  messagingSenderId: "856754740041",
-  appId: "1:856754740041:web:7770f2aba371bd99981898",
-  measurementId: "G-EC7KW4NRNK"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
