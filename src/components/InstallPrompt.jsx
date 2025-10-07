@@ -51,7 +51,7 @@ export default function InstallPrompt({ className = "" }) {
       onClick={handleInstall}
       className={`px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${className}`}
     >
-      📲 Install App
+      Install App
     </button>
   );
 }
