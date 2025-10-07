@@ -133,6 +133,8 @@ function TodoItem({ todo, refreshTodos }) {
   const handleDelete = async (e) => {
     if (role === "client") return;
     await deleteDoc(doc(db, "todos", todo.id));
+    toast.dismiss(); // remove loading toast
+    toast.success("Task deleted!");
     refreshTodos();
   };
 
@@ -249,8 +251,8 @@ function TodoItem({ todo, refreshTodos }) {
   return (
     <>
       <Card onClick={() => {
-        if(!isAlertOpen) setIsDialogOpen(true)
-        }} className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer">
+        if (!isAlertOpen) setIsDialogOpen(true)
+      }} className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer">
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
@@ -360,7 +362,7 @@ function TodoItem({ todo, refreshTodos }) {
                 <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
                   <AlertDialogTrigger asChild>
                     <Button
-                    onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                       variant="outline"
                       size="sm"
                       className="hover:bg-red-50 hover:text-red-600 transition cursor-pointer"

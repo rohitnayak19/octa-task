@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import InstallPrompt from "./InstallPrompt";
 import Logo from "../assets/OctaTech_Logo.webp";
 
 function Navbar() {
@@ -81,6 +82,8 @@ function Navbar() {
                 <LogOut size={16} />
                 <span>Logout</span>
               </Button>
+
+              <InstallPrompt/>
             </>
           ) : (
             <>
@@ -120,7 +123,7 @@ function Navbar() {
                 </Link>
               )}
 
-
+              <InstallPrompt className="mt-2" />
 
               <Button
                 onClick={handleLogout}
@@ -147,5 +150,4 @@ function Navbar() {
     </nav>
   );
 }
-
 export default Navbar;

@@ -67,7 +67,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   // ✅ Manual add
   const handleAddManual = async () => {
     if (!title) {
-      toast.error("Title and phone are required!");
+      toast.error("Title are required!");
       return;
     }
 
