@@ -487,40 +487,48 @@ function TodoItem({ todo, refreshTodos }) {
                       selected={editDate ? new Date(editDate) : undefined}
                       onSelect={(d) => {
                         if (d) {
-                          const newDate = new Date(d);
-                          if (editDate) {
-                            const old = new Date(editDate);
-                            newDate.setHours(old.getHours());
-                            newDate.setMinutes(old.getMinutes());
-                          }
+                          const old = new Date(editDate || new Date());
+                          // keep local time (hours/minutes) from old date
+                          const newDate = new Date(
+                            d.getFullYear(),
+                            d.getMonth(),
+                            d.getDate(),
+                            old.getHours(),
+                            old.getMinutes()
+                          );
                           setEditDate(newDate.toISOString());
                         }
                       }}
                       initialFocus
                     />
+
                   </PopoverContent>
                 </Popover>
 
                 <Input
                   type="time"
                   value={
-                    editDate ? new Date(editDate).toISOString().slice(11, 16) : ""
+                    editDate
+                      ? (() => {
+                        const d = new Date(editDate);
+                        const hours = d.getHours().toString().padStart(2, "0");
+                        const minutes = d.getMinutes().toString().padStart(2, "0");
+                        return `${hours}:${minutes}`;
+                      })()
+                      : ""
                   }
                   onChange={(e) => {
-                    if (!editDate) {
-                      const today = new Date();
-                      const [h, m] = e.target.value.split(":");
-                      today.setHours(+h, +m);
-                      setEditDate(today.toISOString());
-                    } else {
+                    if (editDate) {
+                      const [hours, minutes] = e.target.value.split(":").map(Number);
                       const d = new Date(editDate);
-                      const [h, m] = e.target.value.split(":");
-                      d.setHours(+h, +m);
+                      d.setHours(hours);
+                      d.setMinutes(minutes);
                       setEditDate(d.toISOString());
                     }
                   }}
                   className="w-[120px]"
                 />
+
               </div>
 
               <Input

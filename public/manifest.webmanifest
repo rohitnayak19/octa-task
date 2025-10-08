@@ -1,4 +1,5 @@
 {
+  "id":"/",
   "name": "OctaTech Task",
   "short_name": "OctaTech",
   "description": "A Task Management Web App built by OctaTech using React, Tailwind, and Firebase.",

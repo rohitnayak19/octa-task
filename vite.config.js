@@ -19,6 +19,7 @@ export default defineConfig({
         'apple-touch-icon.png'
       ],
       manifest: {
+        id:"/",
         name: 'OctaTech Task',
         short_name: 'OctaTech',
         description:

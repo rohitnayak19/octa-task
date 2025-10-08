@@ -70,9 +70,7 @@ function Navbar() {
                   Schedule Call 
                 </Link>
               )}
-
-
-
+              
               <Button
                 onClick={handleLogout}
                 variant="outline"
@@ -82,7 +80,7 @@ function Navbar() {
                 <LogOut size={16} />
                 <span>Logout</span>
               </Button>
-
+              
               <InstallPrompt/>
             </>
           ) : (

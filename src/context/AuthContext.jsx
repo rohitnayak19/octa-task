@@ -15,15 +15,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("🔄 Initializing onAuthStateChanged listener");
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("🔐 onAuthStateChanged, user:", user);
       if (user) {
         try {
           const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
-          console.log("📄 Firestore user doc:", docSnap.data());
-
           if (docSnap.exists()) {
             const userData = docSnap.data();
 
@@ -52,21 +48,17 @@ export function AuthProvider({ children }) {
             setRole("user");
           }
         } catch (error) {
-          console.error("❌ Error fetching user data:", error);
           setCurrentUser(null);
           setRole(null);
         }
       } else {
-        console.log("🔐 No user logged in");
         setCurrentUser(null);
         setRole(null);
       }
       setLoading(false);
-      console.log("🔄 Loading set to false");
     });
 
     return () => {
-      console.log("🧹 Cleaning up onAuthStateChanged listener");
       unsubscribe();
     };
   }, []);

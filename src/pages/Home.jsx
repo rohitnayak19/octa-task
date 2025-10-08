@@ -41,7 +41,6 @@ useEffect(() => {
   const unsubscribe = onSnapshot(devRef, (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      console.log("Realtime Update:", data.clients);
       setClients(data.clients || []);
     }
   });
@@ -63,7 +62,7 @@ useEffect(() => {
   const handleCopyDevCode = () => {
     if (currentUser?.devCode) {
       navigator.clipboard.writeText(currentUser.devCode);
-      toast.success("Developer Code copied!");
+      toast.success("Manager Code copied!");
     }
   };
 
@@ -108,7 +107,6 @@ useEffect(() => {
         `Client ${action === "delete" ? "removed" : action} successfully!`
       );
     } catch (err) {
-      console.error(err);
       toast.error("Failed to update client");
     }
   };

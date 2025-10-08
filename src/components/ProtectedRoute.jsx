@@ -6,8 +6,6 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { currentUser, role, loading } = useAuth();
   const location = useLocation();
 
-  console.log("🔒 ProtectedRoute - loading:", loading, "currentUser:", currentUser);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -17,7 +15,6 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   if (!currentUser) {
-    console.log("🚫 No user, redirecting to /login");
     return <Navigate to="/login" replace />;
   }
 
@@ -41,7 +38,6 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   // ✅ User ke liye `/` normal Home hi chalega
-  console.log("✅ User authenticated, rendering children");
   return children;
 };
 

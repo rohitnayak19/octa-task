@@ -278,6 +278,7 @@ function CallSchedule() {
                 {/* Filters */}
                 <div className="flex gap-2">
                     <Button
+                        className="cursor-pointer"
                         variant={filter === "all" ? "default" : "outline"}
                         onClick={() => setFilter("all")}
                     >
@@ -286,7 +287,7 @@ function CallSchedule() {
                     <Button
                         variant={filter === "today" ? "default" : "outline"}
                         onClick={() => setFilter("today")}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 cursor-pointer"
                     >
                         Today
                         {todayCount > 0 && (
@@ -296,7 +297,7 @@ function CallSchedule() {
                     <Button
                         variant={filter === "tomorrow" ? "default" : "outline"}
                         onClick={() => setFilter("tomorrow")}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 cursor-poiner"
                     >
                         Tomorrow
                         {tomorrowCount > 0 && (
@@ -332,7 +333,7 @@ function CallSchedule() {
 
                         <Dialog open={open} onOpenChange={setOpen}>
                             <DialogTrigger asChild>
-                                <Button className="flex items-center gap-2">
+                                <Button className="flex items-center gap-2 cursor-pointer">
                                     <Plus size={16} /> Add Lead
                                 </Button>
                             </DialogTrigger>
@@ -652,7 +653,7 @@ function CallSchedule() {
                 <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Pie Chart by Status */}
                     <Card>
-                        <div className="flex gap-2 mb-4">
+                        <div className="flex flex-wrap gap-2 mb-4 ml-5">
                             <Button variant={statusRange === "7d" ? "default" : "outline"} onClick={() => setStatusRange("7d")}>Last 7 Days</Button>
                             <Button variant={statusRange === "1m" ? "default" : "outline"} onClick={() => setStatusRange("1m")}>Last 1 Month</Button>
                             <Button variant={statusRange === "1y" ? "default" : "outline"} onClick={() => setStatusRange("1y")}>Last 1 Year</Button>
@@ -762,7 +763,7 @@ function CallSchedule() {
                     <Card>
                         <CardHeader>
                             {/* Filter Buttons */}
-                            <div className="flex gap-2 mb-4">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 <Button
                                     variant={businessRange === "7d" ? "default" : "outline"}
                                     onClick={() => setBusinessRange("7d")}
