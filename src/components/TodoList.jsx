@@ -80,7 +80,12 @@ function TodoList({ activeTab, role, userId }) {
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start gap-2 justify-between mb-4">
-        <h2 className="text-2xl font-bold">{activeTab.toUpperCase()} List</h2>
+        <h2 className="text-2xl font-bold">
+          {activeTab === "todos"
+            ? "TODO List"
+            : `${activeTab.toUpperCase()} List`}
+        </h2>
+
 
         {/* 👇 Date & Quick Filters */}
         <div className="flex gap-4 flex-wrap items-center">

@@ -138,13 +138,13 @@ function Home() {
 
               {/* 👋 Welcome Text */}
               <div>
-                <h2 className="text-2xl drop-shadow-xs font-semibold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl drop-shadow-sm font-semibold text-gray-800 flex items-center gap-2">
                   Welcome,&nbsp;
-                  <span className="text-yellow-300 text-2xl drop-shadow-2xl font-bold tracking-tight">
+                  <span className="text-yellow-300  text-2xl font-semibold tracking-tight">
                     {currentUser.name || currentUser.email}
                   </span>
                 </h2>
-                <p className="text-sm text-gray-500 mt-1 italic">
+                <p className="text-sm drop-shadow-lg text-gray-500 mt-1 italic">
                   “{randomQuote}”
                 </p>
               </div>
