@@ -65,17 +65,17 @@ function TodoList({ activeTab, role, userId }) {
   const filteredTodos =
     selectedDate === "overdue"
       ? todos.filter((todo) => {
-          if (!todo.date) return false;
-          const todoDate = new Date(todo.date.seconds * 1000);
-          return todoDate < today && todoDate.toDateString() !== today.toDateString();
-        })
+        if (!todo.date) return false;
+        const todoDate = new Date(todo.date.seconds * 1000);
+        return todoDate < today && todoDate.toDateString() !== today.toDateString();
+      })
       : selectedDate
-      ? todos.filter((todo) => {
+        ? todos.filter((todo) => {
           if (!todo.date) return false;
           const todoDate = new Date(todo.date.seconds * 1000);
           return todoDate.toDateString() === selectedDate.toDateString();
         })
-      : todos;
+        : todos;
 
   return (
     <div>
@@ -84,13 +84,13 @@ function TodoList({ activeTab, role, userId }) {
 
         {/* 👇 Date & Quick Filters */}
         <div className="flex gap-4 flex-wrap items-center">
-          <Button variant="outline" onClick={() => setSelectedDate(null)}>
+          <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate(null)}>
             All
           </Button>
 
           {/* Today button with badge */}
           <div className="relative">
-            <Button variant="outline" onClick={() => setSelectedDate(today)}>
+            <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate(today)}>
               Today
             </Button>
             {todayCount > 0 && (
@@ -103,6 +103,7 @@ function TodoList({ activeTab, role, userId }) {
           {/* Tomorrow button with badge */}
           <div className="relative">
             <Button
+              className="cursor-pointer"
               variant="outline"
               onClick={() => {
                 setSelectedDate(tomorrow);
@@ -119,7 +120,7 @@ function TodoList({ activeTab, role, userId }) {
 
           {/* Overdue button with badge */}
           <div className="relative">
-            <Button variant="outline" onClick={() => setSelectedDate("overdue")}>
+            <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate("overdue")}>
               Overdue
             </Button>
             {overdueCount > 0 && (
@@ -157,7 +158,7 @@ function TodoList({ activeTab, role, userId }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {filteredTodos.length > 0 ? (
           filteredTodos.map((todo) => (
-            <TodoItem key={todo.id} todo={todo} role={role} refreshTodos={() => {}} />
+            <TodoItem key={todo.id} todo={todo} role={role} refreshTodos={() => { }} />
           ))
         ) : (
           <div className="col-span-full text-center py-10 bg-gray-50 border rounded-lg">
