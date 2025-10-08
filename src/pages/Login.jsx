@@ -15,16 +15,19 @@ import {
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [Loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { currentUser, role } = useAuth();
 
   const handleLogin = async () => {
     setError("");
+    setLoading(true)
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // 🔑 navigate ko yahan nahi karna
@@ -39,6 +42,8 @@ function Login() {
       } else {
         setError("❌ Login failed. Please try again.");
       }
+    } finally {
+      setLoading(false)
     }
   };
 
@@ -83,8 +88,15 @@ function Login() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-2">
-          <Button onClick={handleLogin} className="w-full cursor-pointer">
-            Login
+          <Button onClick={handleLogin} disabled={Loading} className="w-full cursor-pointer">
+            {Loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner className="h-4 w-4 text-white" />
+                Logging in...
+              </div>
+            ) : (
+              "Login"
+            )}
           </Button>
           <p className="text-sm text-gray-600">
             Don’t have an account?{" "}
@@ -94,7 +106,7 @@ function Login() {
           </p>
           <p className="text-[12px] text-gray-600 text-right">
             <Link to="/forgot-password" className="hover:underline">
-             Forgot Password?
+              Forgot Password?
             </Link>
           </p>
         </CardFooter>

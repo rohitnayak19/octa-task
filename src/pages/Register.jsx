@@ -14,6 +14,7 @@ import {
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import {Spinner} from "../components/ui/spinner"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../components/ui/select";
 
 function Register() {
@@ -23,6 +24,7 @@ function Register() {
   const [role, setRole] = useState("user"); // default = developer
   const [devCodeInput, setDevCodeInput] = useState(""); // 👈 client ke liye input
   const [error, setError] = useState("");
+  const [Loading, setLoading] = useState(false)
   const navigate = useNavigate();
 
   const generateDevCode = () => {
@@ -31,6 +33,7 @@ function Register() {
 
   const handleRegister = async () => {
     setError("");
+    setLoading(true)
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
       const user = res.user;
@@ -95,6 +98,8 @@ function Register() {
       } else {
         setError("❌ Registration failed.");
       }
+    } finally{
+      setLoading(false)
     }
   };
 
@@ -146,8 +151,15 @@ function Register() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Button onClick={handleRegister} className="w-full cursor-pointer">
-            Register
+          <Button onClick={handleRegister} disabled={Loading} className="w-full cursor-pointer">
+            {Loading ? (
+              <div className="flex justify-center items-center gap-2">
+                <Spinner/>
+                Register
+              </div>
+            ) : (
+              "Register"
+            )}
           </Button>
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
