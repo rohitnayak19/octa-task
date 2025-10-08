@@ -21,6 +21,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -263,7 +274,7 @@ function CallSchedule() {
     return (
         <>
             <Navbar />
-            <div className="space-y-6 p-4 max-w-7xl mx-auto">
+            <div className="space-y-6 p-4 max-w-8xl mx-auto">
                 {/* Filters */}
                 <div className="flex gap-2">
                     <Button
@@ -547,6 +558,7 @@ function CallSchedule() {
                                             </TableCell>
                                             <TableCell className="flex gap-2">
                                                 <Button
+                                                className="cursor-pointer"
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => {
@@ -566,15 +578,32 @@ function CallSchedule() {
                                                         setOpen(true);
                                                     }}
                                                 >
-                                                    <Edit size={16} />
+                                                    <Edit size={16} className="text-neutral-700"/>
                                                 </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleDelete(c.id)}
-                                                >
-                                                    <Trash2 size={16} stroke="red" />
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button className={'cursor-pointer'} size="sm" variant="outline">
+                                                            <Trash2 size={16} stroke="red" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure you want to delete this?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. It will permanently remove this item from your list.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                onClick={() => handleDelete(c.id)}
+                                                                className="bg-zinc-700 hover:bg-zinc-800"
+                                                            >
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}

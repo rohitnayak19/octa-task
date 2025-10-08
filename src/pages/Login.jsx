@@ -63,10 +63,10 @@ function Login() {
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold">Login</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div>
-            <Label>Email</Label>
+            <Label className={'my-1'}>Email</Label>
             <Input
               type="email"
               placeholder="Enter your email"
@@ -74,7 +74,7 @@ function Login() {
             />
           </div>
           <div>
-            <Label>Password</Label>
+            <Label className={'my-1'}>Password</Label>
             <Input
               type="password"
               placeholder="Enter your password"
@@ -82,14 +82,19 @@ function Login() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button onClick={handleLogin} className="w-full">
+        <CardFooter className="flex flex-col items-start gap-2">
+          <Button onClick={handleLogin} className="w-full cursor-pointer">
             Login
           </Button>
           <p className="text-sm text-gray-600">
             Don’t have an account?{" "}
             <Link to="/register" className="text-blue-600 hover:underline">
               Register here
+            </Link>
+          </p>
+          <p className="text-[12px] text-gray-600 text-right">
+            <Link to="/forgot-password" className="hover:underline">
+             Forgot Password?
             </Link>
           </p>
         </CardFooter>

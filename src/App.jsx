@@ -10,6 +10,8 @@ import ClientDashboard from './pages/ClientDashboard';
 import LinkDeveloper from "./pages/LinkDeveloper";
 import CallSchedule from "./pages/CallSchedule";
 import { Toaster } from "react-hot-toast";
+import ForgotPassword from "./pages/ForgetPassword";
+import ResetPassword from "./pages/ResetPassoword";
 
 function App() {
   return (
@@ -19,7 +21,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/forgot-password" element={<ForgotPassword/>} />
+          <Route path="/reset-password" element={<ResetPassword/>} />
           {/* Admin route */}
           <Route
             path="/admin"

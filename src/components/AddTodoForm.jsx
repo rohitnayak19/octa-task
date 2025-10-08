@@ -39,7 +39,9 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const [datePart, setDatePart] = useState(null);
   const [timePart, setTimePart] = useState("");
   const [category, setCategory] = useState(defaultCategory || "todos");
-  const [priority, setPriority] = useState("medium"); // 👈 new state
+  const [priority, setPriority] = useState("medium");
+  const [statusNote, setStatusNote] = useState("");
+
 
   // AI state
   const [prompt, setPrompt] = useState("");
@@ -61,8 +63,8 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const targetUserId = overrideUserId
     ? overrideUserId // ✅ agar admin ne diya hai
     : userData?.role === "client" && userData?.linkedDeveloperId
-    ? userData.linkedDeveloperId
-    : currentUser.uid;
+      ? userData.linkedDeveloperId
+      : currentUser.uid;
 
   // ✅ Manual add
   const handleAddManual = async () => {
@@ -92,6 +94,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         priority,        // 👈 new field
         status: category || "todos",
         userId: targetUserId,
+        statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
       });
@@ -103,6 +106,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       setTimePart("");
       setCategory(defaultCategory || "todos");
       setPriority("medium");
+      setStatusNote("")
 
       if (onTaskAdded) onTaskAdded();
       toast.success("Task added successfully!");
@@ -126,16 +130,17 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
       const result = await model.generateContent(`
       Extract task info from this text and return ONLY raw JSON with fields:
-      title, phone, description, date (ISO string), status (todos|in-process|done), priority (high|medium|low).
+      title, phone, description, date (ISO string), status (todos|in-process|done), priority (high|medium|low), status Note.
 
       Rules:
       - If user specifies a date/time → use that.
       - If no date mentioned → use today's date-time: "${today}".
       - If no priority mentioned → default = "medium".
+      If no status Note mentioned → default = "Working on it".
       - Always return ISO string (YYYY-MM-DDTHH:mm:ss) without timezone suffix.
 
       Example output:
-      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos","priority":"high"}
+      {"title":"Call Rohit","phone":"9876543210","description":"Follow up","date":"2025-09-29T10:00:00","status":"todos","priority":"high", "status note": "Working on it"}
 
       User text: "${prompt}"
     `);
@@ -166,6 +171,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         date: finalDate,
         priority: parsed.priority || "medium", // 👈 new field
         userId: targetUserId,
+        statusNote: parsed.statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
       });
@@ -186,12 +192,14 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       {/* Mode Switch */}
       <div className="flex gap-2">
         <Button
+          className="cursor-pointer"
           variant={mode === "manual" ? "default" : "outline"}
           onClick={() => setMode("manual")}
         >
           Manual
         </Button>
         <Button
+          className="cursor-pointer"
           variant={mode === "ai" ? "default" : "outline"}
           onClick={() => setMode("ai")}
         >
@@ -274,7 +282,32 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             </SelectContent>
           </Select>
 
-          <Button onClick={handleAddManual} className="w-full">
+          {/* StausNote */}
+          <div className="space-y-1">
+            <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
+              <SelectTrigger className="w-fit">
+                <SelectValue placeholder="Select current progress..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="idea-stage">Idea stage / Planning</SelectItem>
+                <SelectItem value="researching">Researching / Gathering info</SelectItem>
+                <SelectItem value="waiting-approval">Waiting for approval</SelectItem>
+                <SelectItem value="in-progress">Working on it</SelectItem>
+                <SelectItem value="designing">Designing / Creating content</SelectItem>
+                <SelectItem value="editing">Editing / Refining</SelectItem>
+                <SelectItem value="reviewing">Under review / Feedback pending</SelectItem>
+                <SelectItem value="waiting-client">Waiting for client input</SelectItem>
+                <SelectItem value="waiting-team">Waiting for teammate update</SelectItem>
+                <SelectItem value="waiting-assets">Waiting for files / materials</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="published">Published / Delivered</SelectItem>
+                <SelectItem value="on-hold">On hold / Paused</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleAddManual} className="w-full cursor-pointer">
             Add Task
           </Button>
         </div>
@@ -292,7 +325,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
-          <Button onClick={handleAddAi} className="w-full" disabled={loading}>
+          <Button onClick={handleAddAi} className="w-full cursor-pointer" disabled={loading}>
             {loading ? "Adding..." : "Add Task with AI"}
           </Button>
         </div>

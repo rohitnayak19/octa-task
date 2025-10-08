@@ -79,6 +79,8 @@ function TodoItem({ todo, refreshTodos }) {
       : todo.date || ""
   );
   const [editDescription, setEditDescription] = useState(todo.description || "");
+  const [priority, setPriority] = useState(todo.priority || "medium");
+  const [statusNote, setStatusNote] = useState(todo.statusNote);
 
   const fetchComments = async () => {
     const commentsRef = collection(db, "todos", todo.id, "comments");
@@ -181,6 +183,8 @@ function TodoItem({ todo, refreshTodos }) {
       title: editTitle,
       phone: editPhone,
       date: editDate ? Timestamp.fromDate(new Date(editDate)) : null,
+      priority: priority,
+      statusNote: statusNote,
       description: editDescription,
     });
     setIsDialogOpen(false);
@@ -251,7 +255,7 @@ function TodoItem({ todo, refreshTodos }) {
   return (
     <>
       <Card onClick={() => {
-        if (!isAlertOpen) setIsDialogOpen(true)
+        if (!isAlertOpen) setIsDialogOpen(true), setIsCommentDialogOpen(true)
       }} className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer">
         {/* Zigzag Background Pattern */}
         <div
@@ -292,6 +296,31 @@ function TodoItem({ todo, refreshTodos }) {
 
             {renderDeadlineBadge(todo.date)}
             {renderPriorityBadge(todo.priority)}
+
+            {/* Status + Deadline + Priority */}
+            {todo.statusNote && (
+              <p className="text-xs underline text-gray-500 italic mt-1">
+                {(() => {
+                  const map = {
+                    "idea-stage": "Idea stage / Planning",
+                    "researching": "Researching",
+                    "waiting-approval": "Waiting for approval",
+                    "in-progress": "Working on it",
+                    "designing": "Designing",
+                    "editing": "Editing",
+                    "reviewing": "Under review",
+                    "waiting-client": "Waiting for client input",
+                    "waiting-team": "Waiting for teammate update",
+                    "waiting-assets": "Waiting for assets",
+                    "completed": "Completed",
+                    "published": "Published / Delivered",
+                    "on-hold": "On hold",
+                    "cancelled": "Cancelled",
+                  };
+                  return map[todo.statusNote] || todo.statusNote;
+                })()}
+              </p>
+            )}
 
             {/* Actual Date */}
             <div className="flex items-center gap-2 px-3 py-1 text-xs bg-white/70 border rounded-md backdrop-blur-sm shadow-sm">
@@ -406,7 +435,7 @@ function TodoItem({ todo, refreshTodos }) {
                 onClick={() => setIsCommentDialogOpen(true)}
                 variant="secondary"
                 size="sm"
-                className="hover:bg-neutral-200 text-neutral-700 transition"
+                className="hover:bg-neutral-200 cursor-pointer text-neutral-700 transition"
               >
                 <MessageSquare size={16} /> Add Comment
               </Button>
@@ -501,21 +530,63 @@ function TodoItem({ todo, refreshTodos }) {
               />
             </div>
 
+            {/* ✅ Priority Selection */}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Priority</label>
+              <Select
+                value={priority}
+                onValueChange={(val) => setPriority(val)}
+              >
+                <SelectTrigger className="mt-1 w-fit">
+                  <SelectValue placeholder="Choose priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* StausNote */}
+            <div className="space-y-1">
+              <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
+                <SelectTrigger className="w-fit">
+                  <SelectValue placeholder="Select current progress..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="idea-stage">Idea stage / Planning</SelectItem>
+                  <SelectItem value="researching">Researching / Gathering info</SelectItem>
+                  <SelectItem value="waiting-approval">Waiting for approval</SelectItem>
+                  <SelectItem value="in-progress">Working on it</SelectItem>
+                  <SelectItem value="designing">Designing / Creating content</SelectItem>
+                  <SelectItem value="editing">Editing / Refining</SelectItem>
+                  <SelectItem value="reviewing">Under review / Feedback pending</SelectItem>
+                  <SelectItem value="waiting-client">Waiting for client input</SelectItem>
+                  <SelectItem value="waiting-team">Waiting for teammate update</SelectItem>
+                  <SelectItem value="waiting-assets">Waiting for files / materials</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="published">Published / Delivered</SelectItem>
+                  <SelectItem value="on-hold">On hold / Paused</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {/* Comments inside Edit Dialog */}
             <div className="mt-4">
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <MessageSquare size={16} /> Comments ({comments.length})
               </h4>
               <div
-                className="space-y-3 mt-3 h-36 overflow-y-auto pr-2 
+                className={`space-y-3 mt-3 overflow-y-auto pr-2 
              scrollbar-thin scrollbar-thumb-gray-300 
              scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
-             rounded-md"
+             rounded-md ${comments.length > 0 ? "h-36" : "h-min"}`}
               >
                 {comments.map((c) => (
                   <div
                     key={c.id}
-                    className={`max-w-[75%] p-3 rounded-lg shadow text-sm mb-2 
+                    className={`max-w-[75%] px-3 py-1 rounded-lg shadow text-sm mb-2 
         ${c.userId === auth.currentUser.uid
                         ? "ml-auto bg-blue-100 text-blue-800 text-right"
                         : "mr-auto bg-gray-100 text-gray-800 text-left"
@@ -576,14 +647,14 @@ function TodoItem({ todo, refreshTodos }) {
               <DialogTitle>Task Comments</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-3 mt-3 h-fit overflow-y-auto pr-2 
+            <div className={`space-y-3 mt-3 overflow-y-auto pr-2 
              scrollbar-thin scrollbar-thumb-gray-300 
              scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
-             rounded-md">
+             rounded-md ${comments.length > 0 ? "h-36" : "h-min"}`}>
               {comments.map((c) => (
                 <div
                   key={c.id}
-                  className={`max-w-[75%] p-3 rounded-lg shadow text-sm mb-2 ${c.userId === auth.currentUser.uid
+                  className={`max-w-[75%] px-3 py-1 rounded-lg shadow text-sm mb-2 ${c.userId === auth.currentUser.uid
                     ? "ml-auto bg-blue-100 text-blue-800 text-right"
                     : "mr-auto bg-gray-100 text-gray-800 text-left"
                     }`}
@@ -605,6 +676,7 @@ function TodoItem({ todo, refreshTodos }) {
                 placeholder="Write a comment..."
               />
               <Button
+                className={'cursor-pointer'}
                 onClick={handleAddComment}
                 variant="secondary"
                 size="sm"

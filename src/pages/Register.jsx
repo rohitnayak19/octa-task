@@ -146,7 +146,7 @@ function Register() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Button onClick={handleRegister} className="w-full">
+          <Button onClick={handleRegister} className="w-full cursor-pointer">
             Register
           </Button>
           <p className="text-sm text-gray-600">

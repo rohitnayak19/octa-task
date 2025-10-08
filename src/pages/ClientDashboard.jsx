@@ -10,7 +10,6 @@ import { Loader2, LogOut, MoveRight, Plus, Clock } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import Logo from "../assets/OctaTech_Logo.webp";
 import { Link } from "react-router-dom";
 import {
@@ -33,7 +32,7 @@ function ClientDashboard() {
     try {
       await signOut(auth);
     } catch (err) {
-      console.error("❌ Logout error:", err);
+      console.error("Logout error:", err);
     }
   };
 

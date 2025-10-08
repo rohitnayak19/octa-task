@@ -6,7 +6,7 @@ import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, UsersRound } from "lucide-react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import {
@@ -175,7 +175,7 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
 
 
   const tabs = [
-    { key: "todos", label: "Todos" },
+    { key: "todos", label: "Todo" },
     { key: "in-process", label: "In Process" },
     { key: "done", label: "Done" },
     { key: "clients", label: "Clients" },
@@ -257,7 +257,7 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
   return (
     <>
       <Navbar />
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-8xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Button
             onClick={() => navigate(-1)}
@@ -267,13 +267,13 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
           >
             <ArrowLeft size={16} /> Back
           </Button>
-          <h2 className="text-2xl font-bold">
-            📋 User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
+          <h2 className="text-2xl font-bold flex gap-1 items-center">
+            <UsersRound/> User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
           </h2>
 
           {user?.devCode && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+            <div className="mt-2 flex items-center pl-2 py-px rounded-sm bg-gray-100 gap-2">
+              <span className="text-sm font-mono rounded">
                 Manager Code: {user.devCode}
               </span>
               <Button
@@ -293,7 +293,7 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
         {/* ✅ Add Task Button + Dialog */}
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="my-2">
+            <Button className="my-2 cursor-pointer">
               <Plus size={20} /> Add Task
             </Button>
           </DialogTrigger>

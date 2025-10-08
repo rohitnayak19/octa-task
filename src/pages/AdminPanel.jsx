@@ -66,7 +66,7 @@ function AdminPanel() {
   return (
     <>
       <nav className="shadow-sm">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-3">
+        <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-3">
           <Link
             to="/"
             className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -85,7 +85,7 @@ function AdminPanel() {
           </Button>
         </div>
       </nav>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-8xl mx-auto">
         <Card className="shadow-sm border rounded-xl">
           <CardHeader className="flex flex-col gap-3">
             <CardTitle className="text-lg flex gap-1 font-semibold text-gray-800">
