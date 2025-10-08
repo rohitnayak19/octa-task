@@ -1,24 +1,24 @@
-# 🌟 OctaTech Task — Smart Task & Lead Management App
+# OctaTech — Task & Lead Management System
 
 Welcome to **OctaTech Task**, a web-based platform designed to simplify task tracking, client management, and business lead monitoring — all in one place.  
 Whether you’re a **Manager** or a **Client**, OctaTech helps you stay connected and organized effortlessly.
 
 ---
 
-## 🚀 What Is OctaTech Task?
+## What Is OctaTech Task?
 
 OctaTech Task is an all-in-one web app where:
 
-- 🧑‍💼 **Managers** can manage clients, assign tasks, schedule calls, and track leads.  
-- 👥 **Clients** can connect with their managers using a special code, view assigned tasks, and stay updated in real time.
+- **Managers** can manage clients, assign tasks, schedule calls, and track leads.  
+- **Clients** can connect with their managers using a special code, view assigned tasks, and stay updated in real time.
 
 It’s fast, clean, and works on both desktop and mobile — you can even install it as a Progressive Web App (PWA)!
 
 ---
 
-## 🪜 Getting Started (User Guide)
+## Getting Started (User Guide)
 
-### 🧩 Step 1: Register as a Manager
+### Step 1: Register as a Manager
 1. Visit the **Register** page.  
 2. Enter your **Name**, **Email**, and **Password**.  
 3. Select **Manager** as your role.  
@@ -26,7 +26,7 @@ It’s fast, clean, and works on both desktop and mobile — you can even instal
 
 This code allows clients to connect to your account.
 
-📸 **Screenshot:**  
+**Screenshot:**  
 ![Manager Registration](./Screenshot%202025-10-07%20120511.png)
 
 ---
@@ -38,19 +38,19 @@ This code allows clients to connect to your account.
 4. Enter the **Manager Code** shared by your manager.  
 5. Click **Register** to send a connection request.
 
-📸 **Screenshot:**  
+**Screenshot:**  
 ![Client Registration](./Screenshot%202025-10-07%20120550.png)
 
 ---
 
-### 🔑 Step 3: Login
+### Step 3: Login
 After registration, use your email and password to log in.
-📸 **Screenshot:**  
+**Screenshot:**  
 ![Login Page](./Screenshot%202025-10-07%20115507.png)
 
 ---
 
-## 👨‍💼 Manager Dashboard
+## Manager Dashboard
 Once logged in as a Manager, you’ll be redirected to your dashboard.  
 Here you can:
 
@@ -59,7 +59,7 @@ Here you can:
 - Manage your team and track work progress  
 - Copy and share your **Manager Code**
 
-📸 **Screenshot:**  
+**Screenshot:**  
 ![Manager Dashboard](./Screenshot%202025-10-07%20115645.png)
 
 ---
@@ -89,7 +89,6 @@ If access is removed or rejected, the client sees this message and can request a
 ---
 
 ## 🧾 Client Dashboard
-
 Once approved, clients can access their personalized dashboard to:
 
 - View manager-assigned tasks  
@@ -140,7 +139,6 @@ Analyze leads with interactive charts showing:
 | **In Process** | Ongoing tasks |
 | **Done** | Completed tasks |
 | **Clients** | Manage client approvals (Manager only) |
-| **Leads** | Track and analyze business leads |
 | **Schedule Call** | Manage upcoming client meetings |
 
 ---
@@ -175,11 +173,3 @@ You can install OctaTech Task on your device for a native-app experience.
 - If you see **Access Removed**, click **Request Access**.  
 - Managers can easily share their **Manager Code** via the **Copy** button.  
 ---
-
-## Developed By OctaTech
-Designed and built by **OctaTech VIII** using:
-- React + Vite  
-- Firebase Auth + Firestore  
-- Tailwind CSS  
-- Chart JS  
-- PWA support  

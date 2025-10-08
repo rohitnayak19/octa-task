@@ -92,7 +92,7 @@ function ClientDashboard() {
     return (
       <>
         <nav className="shadow-sm p-2">
-          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+          <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-2">
             <Link
               to="/"
               className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -141,7 +141,7 @@ function ClientDashboard() {
     return (
       <>
         <nav className="shadow-sm p-2">
-          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+          <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-2">
             <Link
               to="/"
               className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -200,7 +200,7 @@ function ClientDashboard() {
     return (
       <>
         <nav className="shadow-sm p-2">
-          <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+          <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-2">
             <Link
               to="/"
               className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -256,7 +256,7 @@ function ClientDashboard() {
   return (
     <>
       <nav className="shadow-sm p-1">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-2">
+        <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-2">
           <Link
             to="/"
             className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -277,7 +277,7 @@ function ClientDashboard() {
           </Button>
         </div>
       </nav>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-8xl mx-auto">
         {developerData && (
           <p className="text-gray-600 mb-4">
             Linked Manager: <strong>{developerData.name}</strong>
