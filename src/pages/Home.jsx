@@ -30,23 +30,33 @@ function Home() {
   const { currentUser, role } = useAuth();
   const [activeTab, setActiveTab] = useState("todos");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  const [copied, setCopied] = useState(false);
   // 🔹 Realtime clients state
   const [clients, setClients] = useState([]);
 
   // 🔹 Listen for realtime updates from Firestore
-useEffect(() => {
-  if (!currentUser) return;
-  const devRef = doc(db, "users", currentUser.uid);
-  const unsubscribe = onSnapshot(devRef, (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      setClients(data.clients || []);
-    }
-  });
-  return () => unsubscribe();
-}, [currentUser]);
+  useEffect(() => {
+    if (!currentUser) return;
+    const devRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onSnapshot(devRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setClients(data.clients || []);
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
 
+  const managerQuotes = [
+    "Leadership is not about being in charge. It’s about taking care of those in your charge.",
+    "Great managers bring out the greatness in others.",
+    "A great manager turns challenges into opportunities.",
+    "Lead with vision. Execute with passion.",
+    "Small progress each day leads to big results — keep pushing!",
+    "Your team looks up to you — show them what’s possible today."
+  ];
+
+  const randomQuote = managerQuotes[Math.floor(Math.random() * managerQuotes.length)];
 
 
   const tabs = [
@@ -63,6 +73,8 @@ useEffect(() => {
     if (currentUser?.devCode) {
       navigator.clipboard.writeText(currentUser.devCode);
       toast.success("Manager Code copied!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     }
   };
 
@@ -122,32 +134,40 @@ useEffect(() => {
         ) : (
           <>
             {/* ✅ Welcome Section */}
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 justify-between bg-white shadow-sm p-4 rounded-md mb-2">
-              <h2 className="text-xl font-bold">
-                Welcome,{" "}
-                <span className="text-yellow-400">
-                  {currentUser.name || currentUser.email}
-                </span>
-              </h2>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-gradient-to-r from-white to-yellow-50/10 py-4 border-gray-100 mb-4 transition-all duration-300">
 
-              {/* ✅ Show Dev Code for user */}
+              {/* 👋 Welcome Text */}
+              <div>
+                <h2 className="text-2xl drop-shadow-xs font-semibold text-gray-800 flex items-center gap-2">
+                  Welcome,&nbsp;
+                  <span className="text-yellow-300 text-3xl font-bold tracking-tight">
+                    {currentUser.name || currentUser.email}
+                  </span>
+                </h2>
+                <p className="text-sm text-gray-500 mt-1 italic">
+                  “{randomQuote}”
+                </p>
+              </div>
+
+              {/* 💼 Manager Code */}
               {role === "user" && currentUser.devCode && (
-                <div className="flex items-center gap-2 bg-neutral-100 px-3 py-1 rounded-md">
-                  <span className="text-sm font-medium">
-                    Manager Code: <span className="font-mono">{currentUser.devCode}</span>
+                <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-yellow-50 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                  <span className="text-sm font-medium text-gray-700">
+                    <span className="text-gray-500">Manager Code:</span>{" "}
+                    <span className="font-mono text-gray-800">{currentUser.devCode}</span>
                   </span>
                   <Button
-                    className="active:scale-105"
+                    onClick={handleCopyDevCode}
                     size="sm"
                     variant="outline"
-                    onClick={handleCopyDevCode}
+                    className="border-yellow-300 cursor-pointer text-yellow-700 hover:bg-yellow-100 active:scale-105 transition-all"
                   >
-                    Copy
+                    {copied ? "Copied!" : "Copy"}
                   </Button>
+
                 </div>
               )}
             </div>
-
             {role === "user" && (
               <>
                 {/* ✅ Add Todo Form inside Dialog */}
@@ -230,10 +250,10 @@ useEffect(() => {
                                   <p className="text-sm text-gray-500">{client.email}</p>
                                   <Badge
                                     className={`mt-1 ${client.status === "approved"
-                                        ? "bg-green-100 text-green-700"
-                                        : client.status === "rejected"
-                                          ? "bg-red-100 text-red-700"
-                                          : "bg-yellow-100 text-yellow-700"
+                                      ? "bg-green-100 text-green-700"
+                                      : client.status === "rejected"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-yellow-100 text-yellow-700"
                                       }`}
                                   >
                                     {client.status}
