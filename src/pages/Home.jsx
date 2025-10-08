@@ -140,7 +140,7 @@ function Home() {
               <div>
                 <h2 className="text-2xl drop-shadow-xs font-semibold text-gray-800 flex items-center gap-2">
                   Welcome,&nbsp;
-                  <span className="text-yellow-300 text-3xl font-bold tracking-tight">
+                  <span className="text-yellow-300 text-2xl drop-shadow-2xl font-bold tracking-tight">
                     {currentUser.name || currentUser.email}
                   </span>
                 </h2>
