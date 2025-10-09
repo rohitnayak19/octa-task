@@ -24,6 +24,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge";
 
 function Home() {
@@ -264,7 +275,7 @@ function Home() {
                                     <>
                                       <Button
                                         size="sm"
-                                        className="flex items-center gap-1 text-green-700"
+                                        className="flex items-center cursor-pointer gap-1 text-green-700"
                                         variant="outline"
                                         onClick={() =>
                                           handleClientAction(client.id, "approved")
@@ -274,24 +285,46 @@ function Home() {
                                       </Button>
                                       <Button
                                         size="sm"
-                                        className="flex items-center gap-1 text-red-700"
+                                        className="flex cursor-pointer items-center gap-1"
                                         variant="outline"
                                         onClick={() =>
                                           handleClientAction(client.id, "rejected")
                                         }
                                       >
-                                        <X size={14} /> Reject
+                                        <X size={14} stroke="orange" /> Reject
                                       </Button>
                                     </>
                                   )}
-                                  <Button
-                                    size="sm"
-                                    className="flex items-center gap-1 text-red-600"
-                                    variant="outline"
-                                    onClick={() => handleClientAction(client.id, "delete")}
-                                  >
-                                    <Trash2 size={14} /> Remove
-                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="flex items-center gap-1 text-red-700"
+                                        variant="outline"
+                                      >
+                                        <X size={14} /> Reject
+                                      </Button>
+                                    </AlertDialogTrigger>
+
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This action cannot be undone. This will permanently reject the client request.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          className="bg-red-600 text-white hover:bg-red-700"
+                                          onClick={() => handleClientAction(client.id, "delete")}
+                                        >
+                                          Yes, Reject
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </li>
                             ))}

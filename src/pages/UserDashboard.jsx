@@ -6,7 +6,7 @@ import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trash2, Plus, UsersRound } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, UsersRound, X, Check } from "lucide-react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import {
@@ -16,6 +16,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import Navbar from "../components/Navbar";
 
 function UserDashboard() {
@@ -51,127 +62,127 @@ function UserDashboard() {
     fetchUser();
   }, [userId]);
 
-// ✅ Helper to update developer's client array safely
-const updateDeveloperClientStatus = async (developerId, clientId, status) => {
-  const devRef = doc(db, "users", developerId);
-  const devSnap = await getDoc(devRef);
-
-  if (!devSnap.exists()) return;
-
-  const devData = devSnap.data();
-  const updatedClients = (devData.clients || []).map((c) =>
-    c.id === clientId ? { ...c, status } : c
-  );
-
-  await updateDoc(devRef, { clients: updatedClients });
-};
-  // ✅ Approve
-  const handleApprove = async (client) => {
-  try {
-    const clientRef = doc(db, "users", client.id);
-    const clientSnap = await getDoc(clientRef);
-
-    if (!clientSnap.exists()) {
-      toast.error("Client not found");
-      return;
-    }
-
-    // Get developer linked to this client
-    const clientData = clientSnap.data();
-    const developerId = clientData.linkedUserId || client.linkedUserId;
-
-    if (!developerId) {
-      toast.error("No linked developer found for this client");
-      return;
-    }
-
-    // Get developer’s data
+  // ✅ Helper to update developer's client array safely
+  const updateDeveloperClientStatus = async (developerId, clientId, status) => {
     const devRef = doc(db, "users", developerId);
     const devSnap = await getDoc(devRef);
+
     if (!devSnap.exists()) return;
 
     const devData = devSnap.data();
     const updatedClients = (devData.clients || []).map((c) =>
-      c.id === client.id ? { ...c, status: "approved" } : c
+      c.id === clientId ? { ...c, status } : c
     );
 
-    // Use Firestore batch to update both docs atomically
-    const batch = writeBatch(db);
-    batch.update(clientRef, { status: "approved", linkedUserId: developerId });
-    batch.update(devRef, { clients: updatedClients });
-    await batch.commit();
+    await updateDoc(devRef, { clients: updatedClients });
+  };
+  // ✅ Approve
+  const handleApprove = async (client) => {
+    try {
+      const clientRef = doc(db, "users", client.id);
+      const clientSnap = await getDoc(clientRef);
 
-    toast.success("✅ Client approved!");
-  } catch (err) {
-    console.error("Approval error:", err);
-    toast.error("Approval failed");
-  }
-};
+      if (!clientSnap.exists()) {
+        toast.error("Client not found");
+        return;
+      }
+
+      // Get developer linked to this client
+      const clientData = clientSnap.data();
+      const developerId = clientData.linkedUserId || client.linkedUserId;
+
+      if (!developerId) {
+        toast.error("No linked developer found for this client");
+        return;
+      }
+
+      // Get developer’s data
+      const devRef = doc(db, "users", developerId);
+      const devSnap = await getDoc(devRef);
+      if (!devSnap.exists()) return;
+
+      const devData = devSnap.data();
+      const updatedClients = (devData.clients || []).map((c) =>
+        c.id === client.id ? { ...c, status: "approved" } : c
+      );
+
+      // Use Firestore batch to update both docs atomically
+      const batch = writeBatch(db);
+      batch.update(clientRef, { status: "approved", linkedUserId: developerId });
+      batch.update(devRef, { clients: updatedClients });
+      await batch.commit();
+
+      toast.success("Client approved!");
+    } catch (err) {
+      console.error("Approval error:", err);
+      toast.error("Approval failed");
+    }
+  };
 
 
   // ✅ Reject
- const handleReject = async (client) => {
-  try {
-    const clientRef = doc(db, "users", client.id);
-    const clientSnap = await getDoc(clientRef);
-    if (!clientSnap.exists()) return;
+  const handleReject = async (client) => {
+    try {
+      const clientRef = doc(db, "users", client.id);
+      const clientSnap = await getDoc(clientRef);
+      if (!clientSnap.exists()) return;
 
-    const clientData = clientSnap.data();
-    const developerId = clientData.linkedUserId || client.linkedUserId;
-    if (!developerId) return;
+      const clientData = clientSnap.data();
+      const developerId = clientData.linkedUserId || client.linkedUserId;
+      if (!developerId) return;
 
-    const devRef = doc(db, "users", developerId);
-    const devSnap = await getDoc(devRef);
-    if (!devSnap.exists()) return;
+      const devRef = doc(db, "users", developerId);
+      const devSnap = await getDoc(devRef);
+      if (!devSnap.exists()) return;
 
-    const devData = devSnap.data();
-    const updatedClients = (devData.clients || []).map((c) =>
-      c.id === client.id ? { ...c, status: "rejected" } : c
-    );
+      const devData = devSnap.data();
+      const updatedClients = (devData.clients || []).map((c) =>
+        c.id === client.id ? { ...c, status: "rejected" } : c
+      );
 
-    const batch = writeBatch(db);
-    batch.update(clientRef, { status: "rejected" });
-    batch.update(devRef, { clients: updatedClients });
-    await batch.commit();
+      const batch = writeBatch(db);
+      batch.update(clientRef, { status: "rejected" });
+      batch.update(devRef, { clients: updatedClients });
+      await batch.commit();
 
-    toast.error("Client rejected!");
-  } catch (err) {
-    console.error("Rejection error:", err);
-    toast.error("Rejection failed");
-  }
-};
+      toast.error("Client rejected!");
+    } catch (err) {
+      console.error("Rejection error:", err);
+      toast.error("Rejection failed");
+    }
+  };
 
   // ✅ Remove
- const handleDelete = async (client) => {
-  try {
-    const clientRef = doc(db, "users", client.id);
-    const clientSnap = await getDoc(clientRef);
-    if (!clientSnap.exists()) return;
+  const handleDelete = async (client) => {
+    try {
+      const clientRef = doc(db, "users", client.id);
+      const clientSnap = await getDoc(clientRef);
+      if (!clientSnap.exists()) return;
 
-    const clientData = clientSnap.data();
-    const developerId = clientData.linkedUserId || client.linkedUserId;
-    if (!developerId) return;
+      const clientData = clientSnap.data();
+      const developerId = clientData.linkedUserId || client.linkedUserId;
+      if (!developerId) return;
 
-    const devRef = doc(db, "users", developerId);
-    const devSnap = await getDoc(devRef);
-    if (!devSnap.exists()) return;
+      const devRef = doc(db, "users", developerId);
+      const devSnap = await getDoc(devRef);
+      if (!devSnap.exists()) return;
 
-    const devData = devSnap.data();
-    const updatedClients = (devData.clients || []).filter(
-      (c) => c.id !== client.id
-    );
+      const devData = devSnap.data();
+      const updatedClients = (devData.clients || []).filter(
+        (c) => c.id !== client.id
+      );
 
-    const batch = writeBatch(db);
-    batch.update(clientRef, { status: "removed", linkedUserId: null });
-    batch.update(devRef, { clients: updatedClients });
-    await batch.commit();
+      const batch = writeBatch(db);
+      batch.update(clientRef, { status: "removed", linkedUserId: null });
+      batch.update(devRef, { clients: updatedClients });
+      await batch.commit();
 
-    toast.success("Client removed!");
-  } catch (err) {
-    console.error("Removal error:", err);
-    toast.error("Removal failed");
-  }
-};
+      toast.success("Client removed!");
+    } catch (err) {
+      console.error("Removal error:", err);
+      toast.error("Removal failed");
+    }
+  };
 
 
   const tabs = [
@@ -268,7 +279,7 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
             <ArrowLeft size={16} /> Back
           </Button>
           <h2 className="text-2xl font-bold flex gap-1 items-center">
-            <UsersRound/> User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
+            <UsersRound /> User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
           </h2>
 
           {user?.devCode && (
@@ -355,10 +366,10 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
                             <span
                               className={
                                 client.status === "approved"
-                                  ? "text-green-600"
+                                  ? "text-green-600 bg-green-100 px-2 py-px rounded-2xl"
                                   : client.status === "rejected"
-                                    ? "text-red-600"
-                                    : "text-yellow-600"
+                                    ? "text-red-600 bg-red-100 px-2 py-px rounded-2xl"
+                                    : "text-yellow-600 bg-yellow-100 px-2 py-px rounded-2xl"
                               }
                             >
                               {client.status}
@@ -369,25 +380,49 @@ const updateDeveloperClientStatus = async (developerId, clientId, status) => {
                         <div className="flex gap-2">
                           {client.status === "pending" && (
                             <>
-                              <Button size="sm" onClick={() => handleApprove(client)}>
-                                Approve
+                              <Button className={'cursor-pointer text-green-700'} variant={'outline'} size="sm" onClick={() => handleApprove(client)}>
+                                <Check stroke="green"/> Approve
                               </Button>
                               <Button
+                                className={'cursor-pointer'}
                                 size="sm"
-                                variant="destructive"
+                                variant="outline"
                                 onClick={() => handleReject(client)}
                               >
-                                Reject
+                               <X stroke="orange"/> Reject
                               </Button>
                             </>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(client)}
-                          >
-                            <Trash2 stroke="red" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                className="flex cursor-pointer items-center gap-1 text-red-600"
+                                variant="outline"
+                              >
+                                <Trash2 size={10} /> Remove
+                              </Button>
+                            </AlertDialogTrigger>
+
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently reject the client request.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-red-600 text-white hover:bg-red-700"
+                                  onClick={() => handleDelete(client)}
+                                >
+                                  Yes, Reject
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </li>
                     ))}
