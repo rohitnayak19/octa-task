@@ -573,10 +573,8 @@ function TodoItem({ todo, refreshTodos }) {
                   <SelectItem value="waiting-client">Waiting for client input</SelectItem>
                   <SelectItem value="waiting-team">Waiting for teammate update</SelectItem>
                   <SelectItem value="waiting-assets">Waiting for files / materials</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="published">Published / Delivered</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="on-hold">On hold / Paused</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
