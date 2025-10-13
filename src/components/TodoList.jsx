@@ -11,11 +11,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function TodoList({ activeTab, role, userId }) {
   const [todos, setTodos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [open, setOpen] = useState(false);
+
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
   useEffect(() => {
     const targetUserId = userId || auth.currentUser?.uid;
@@ -61,8 +70,9 @@ function TodoList({ activeTab, role, userId }) {
     return todoDate < today && todoDate.toDateString() !== today.toDateString();
   }).length;
 
-  // ✅ Filtering logic
-  const filteredTodos =
+
+  // ✅ Date filter logic
+  const filteredTodosByDate =
     selectedDate === "overdue"
       ? todos.filter((todo) => {
         if (!todo.date) return false;
@@ -77,68 +87,80 @@ function TodoList({ activeTab, role, userId }) {
         })
         : todos;
 
+  // ✅ Combine with priority filter
+  const filteredTodos =
+    priorityFilter === "all"
+      ? filteredTodosByDate
+      : filteredTodosByDate.filter(
+        (todo) => todo.priority?.toLowerCase() === priorityFilter
+      );
+
   return (
     <div>
-      <div className="flex flex-col md:flex-row items-start gap-2 justify-between mb-4">
-        <h2 className="text-2xl font-bold">
+      <div className="flex flex-col md:flex-row items-start gap-2 justify-between mb-2">
+        <h2 className="text-xl font-bold px-2">
           {activeTab === "todos"
-            ? "TODO List"
+            ? "TO-DO List"
             : `${activeTab.toUpperCase()} List`}
         </h2>
-
-
         {/* 👇 Date & Quick Filters */}
         <div className="flex gap-4 flex-wrap items-center">
-          <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate(null)}>
-            All
-          </Button>
+          <Select
+            onValueChange={(value) => {
+              if (value === "all") setSelectedDate(null);
+              else if (value === "today") setSelectedDate(today);
+              else if (value === "tomorrow") setSelectedDate(tomorrow);
+              else if (value === "overdue") setSelectedDate("overdue");
+              else if (value === "choose") setOpen(true);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tasks</SelectItem>
+              <SelectItem value="today">
+                <div className="flex items-center justify-between w-full">
+                  Today
+                  {todayCount > 0 && (
+                    <Badge className="bg-blue-600 text-white text-xs">{todayCount}</Badge>
+                  )}
+                </div>
+              </SelectItem>
+              <SelectItem value="tomorrow">
+                <div className="flex items-center justify-between w-full">
+                  Tomorrow
+                  {tomorrowCount > 0 && (
+                    <Badge className="bg-yellow-500 text-white text-xs">
+                      {tomorrowCount}
+                    </Badge>
+                  )}
+                </div>
+              </SelectItem>
+              <SelectItem value="overdue">
+                <div className="flex items-center justify-between w-full">
+                  Overdue
+                  {overdueCount > 0 && (
+                    <Badge className="bg-red-600 text-white text-xs">{overdueCount}</Badge>
+                  )}
+                </div>
+              </SelectItem>
+              <SelectItem value="choose">📅 Choose Date</SelectItem>
+            </SelectContent>
+          </Select>
 
-          {/* Today button with badge */}
-          <div className="relative">
-            <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate(today)}>
-              Today
-            </Button>
-            {todayCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs">
-                {todayCount}
-              </Badge>
-            )}
-          </div>
-
-          {/* Tomorrow button with badge */}
-          <div className="relative">
-            <Button
-              className="cursor-pointer"
-              variant="outline"
-              onClick={() => {
-                setSelectedDate(tomorrow);
-              }}
-            >
-              Tomorrow
-            </Button>
-            {tomorrowCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs">
-                {tomorrowCount}
-              </Badge>
-            )}
-          </div>
-
-          {/* Overdue button with badge */}
-          <div className="relative">
-            <Button className="cursor-pointer" variant="outline" onClick={() => setSelectedDate("overdue")}>
-              Overdue
-            </Button>
-            {overdueCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 bg-red-600 text-white text-xs">
-                {overdueCount}
-              </Badge>
-            )}
-          </div>
-
-          {/* Choose Date Button */}
-          <Button variant="outline" onClick={() => setOpen(true)}>
-            Choose date
-          </Button>
+          {/*Priority Filter */}
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filter Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -160,7 +182,7 @@ function TodoList({ activeTab, role, userId }) {
       </Dialog>
 
       {/* ✅ Show tasks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+      <div className="columns-1 md:columns-2 lg:columns-3">
         {filteredTodos.length > 0 ? (
           filteredTodos.map((todo) => (
             <TodoItem key={todo.id} todo={todo} role={role} refreshTodos={() => { }} />

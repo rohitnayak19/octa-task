@@ -34,13 +34,13 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
   // Manual state
   const [title, setTitle] = useState("");
-  const [phone, setPhone] = useState("");
+  // const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
   const [datePart, setDatePart] = useState(null);
   const [timePart, setTimePart] = useState("");
   const [category, setCategory] = useState(defaultCategory || "todos");
   const [priority, setPriority] = useState("medium");
-  const [statusNote, setStatusNote] = useState("");
+  // const [statusNote, setStatusNote] = useState("");
 
 
   // AI state
@@ -68,7 +68,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
   // ✅ Manual add
   const handleAddManual = async () => {
-    if (!title) {
+    if (!title || title.trim() === "") {
       toast.error("Title are required!");
       return;
     }
@@ -88,25 +88,25 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
     try {
       await addDoc(collection(db, "todos"), {
         title,
-        phone,
+        // phone,
         description,
         date: finalDate, // 👈 deadline
         priority,        // 👈 new field
         status: category || "todos",
         userId: targetUserId,
-        statusNote,
+        // statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
       });
 
       setTitle("");
-      setPhone("");
+      // setPhone("");
       setDescription("");
       setDatePart(null);
       setTimePart("");
       setCategory(defaultCategory || "todos");
       setPriority("medium");
-      setStatusNote("")
+      // setStatusNote("")
 
       if (onTaskAdded) onTaskAdded();
       toast.success("Task added successfully!");
@@ -119,7 +119,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   // ✅ AI add
   const handleAddAi = async () => {
     if (!prompt.trim()) {
-      toast.error("⚠️ Please type something!");
+      toast.error("Please type something!");
       return;
     }
     setLoading(true);
@@ -165,13 +165,13 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
       await addDoc(collection(db, "todos"), {
         title: parsed.title,
-        phone: parsed.phone,
+        // phone: parsed.phone,
         description: parsed.description,
         status: parsed.status || "todos",
         date: finalDate,
         priority: parsed.priority || "medium", // 👈 new field
         userId: targetUserId,
-        statusNote: parsed.statusNote,
+        // statusNote: parsed.statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
       });
@@ -215,11 +215,11 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <Input
+          {/* <Input
             placeholder="Phone number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-          />
+          /> */}
           <Input
             placeholder="Description"
             value={description}
@@ -250,15 +250,16 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
                 />
               </PopoverContent>
             </Popover>
-            <Input
+            {/* <Input
               type="time"
               value={timePart}
               onChange={(e) => setTimePart(e.target.value)}
               className="w-[120px]"
-            />
+            /> */}
           </div>
 
-          {/* Category */}
+          <div className="flex gap-1">
+            {/* Category */}
           <Select value={category} onValueChange={(val) => setCategory(val)}>
             <SelectTrigger>
               <SelectValue placeholder="Choose category" />
@@ -281,9 +282,9 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
               <SelectItem value="low">Low</SelectItem>
             </SelectContent>
           </Select>
-
+          </div>
           {/* StausNote */}
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
               <SelectTrigger className="w-fit">
                 <SelectValue placeholder="Select current progress..." />
@@ -303,7 +304,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
                 <SelectItem value="on-hold">On hold / Paused</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <Button onClick={handleAddManual} className="w-full cursor-pointer">
             Add Task
@@ -314,9 +315,9 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       {/* AI Mode */}
       {mode === "ai" && (
         <div className="space-y-3">
-          <span className="text-neutral-400 text-sm font-light">
+          {/* <span className="text-neutral-400 text-sm font-light">
             E.g : Call Sarthak today 10:00, Phone 7888986633 explain Social Media Marketing Campaign → In-Process High
-          </span>
+          </span> */}
           <Textarea
             className={"mt-3"}
             placeholder="Type your task in natural language..."

@@ -33,11 +33,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import {
-  MessageSquare,
+  MessageCircle,
   Trash2,
   Calendar as CalendarIcon,
-  Phone,
-  SquarePen,
+  Expand,
+  Clock,
   X,
   Save,
 } from "lucide-react";
@@ -178,15 +178,20 @@ function TodoItem({ todo, refreshTodos }) {
   // ✅ Save edits with Timestamp for Firestore (Developer only)
   const saveEdit = async () => {
     if (role === "client") return;
+    if (!editTitle || editTitle.trim() === "") {
+      toast.error("Title is required");
+      return;
+    }
     const todoRef = doc(db, "todos", todo.id);
     await updateDoc(todoRef, {
       title: editTitle,
-      phone: editPhone,
+      // phone: editPhone,
       date: editDate ? Timestamp.fromDate(new Date(editDate)) : null,
       priority: priority,
-      statusNote: statusNote,
+      // statusNote: statusNote,
       description: editDescription,
     });
+    toast.success("Your changes are saved successfully")
     setIsDialogOpen(false);
     refreshTodos();
   };
@@ -256,7 +261,7 @@ function TodoItem({ todo, refreshTodos }) {
     <>
       <Card onClick={() => {
         if (!isAlertOpen) setIsDialogOpen(true), setIsCommentDialogOpen(true)
-      }} className="relative overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer">
+      }} className="relative px-1 py-2 overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer mb-2 md:mb-3">
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
@@ -269,16 +274,38 @@ function TodoItem({ todo, refreshTodos }) {
             `,
           }}
         />
-
-        <CardContent className="relative z-10 px-3">
+        <span className={`absolute top-0 left-0 rounde h-[5px] w-full 
+          ${todo.priority === "high" ? "bg-red-200" : todo.priority === "medium" ? "bg-yellow-200" : todo.priority === "low" ? "bg-green-200" : "bg-gray-300"}
+          `}></span>
+        <CardContent className="relative z-10 px-3 md:px-4">
           {/* Title + Description */}
-          <h3 className="text-2xl md:text-2xl font-semibold text-neutral-800">
-            {todo.title}
-          </h3>
-          <p className="text-gray-600 text-md mt-1">{todo.description}</p>
+          <div className="flex justify-between">
+            <h3 className="text-xl font-semibold text-neutral-900">
+              {todo.title}
+            </h3>
+            <div className="flex items-center">
+              <div className="flex items-center text-sm gap-1 px-2 py-1 text-neutral-700 bg-white/70 rounded-md">
+                <MessageCircle size={16} className="text-gray-500" />{" "}
+                {comments.length}
+              </div>
+              {/* <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedTodo(todo);
+                  setIsDialogOpen(true);
+                }}
+                className="text-blue-600 cursor-pointer hover:text-blue-700 underline font-medium"
+              >
+                <Expand size={18}/>
+              </Button> */}
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-snug mt-1">{todo.description}</p>
 
           {/* Status + Deadline + Priority */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             <Badge
               className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${todo.status === "done"
                 ? "bg-green-100 text-green-700"
@@ -298,7 +325,7 @@ function TodoItem({ todo, refreshTodos }) {
             {renderPriorityBadge(todo.priority)}
 
             {/* Status + Deadline + Priority */}
-            {todo.statusNote && (
+            {/* {todo.statusNote && (
               <p className="text-xs underline text-gray-500 italic mt-1">
                 {(() => {
                   const map = {
@@ -320,18 +347,16 @@ function TodoItem({ todo, refreshTodos }) {
                   return map[todo.statusNote] || todo.statusNote;
                 })()}
               </p>
-            )}
+            )} */}
 
             {/* Actual Date */}
-            <div className="flex items-center gap-2 px-3 py-1 text-xs bg-white/70 border rounded-md backdrop-blur-sm shadow-sm">
-              <CalendarIcon size={16} className="text-gray-500" />
+            <div className="flex items-center gap-2 px-2 py-[2px] text-xs bg-white/70 border rounded-2xl backdrop-blur-sm shadow-sm">
+              <Clock size={16} className="text-gray-500" />
               <span className="font-medium text-sm text-neutral-700">
                 {formatDate(todo.date)?.toLocaleString("en-IN", {
                   weekday: "short",
                   month: "short",
                   day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
                   hour12: true,
                   timeZone: "Asia/Kolkata",
                 })}
@@ -341,22 +366,22 @@ function TodoItem({ todo, refreshTodos }) {
 
           {/* Stats Row */}
           <div className="flex items-center gap-3 border-t mt-3 pt-2 text-sm text-gray-500">
-            <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
+            {/* <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
               <MessageSquare size={18} className="text-gray-500" />{" "}
               {comments.length}
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
+            </div> */}
+            {/* <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
               <Phone size={18} className="text-gray-500" />{" "}
               {todo.phone || "No Phone Number"}
-            </div>
+            </div> */}
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-2">
             {/* Developer Buttons */}
             {role !== "client" && (
               <>
-                <Button
+                {/* <Button
                   onClick={toggleStatus}
                   variant="outline"
                   size="sm"
@@ -367,7 +392,7 @@ function TodoItem({ todo, refreshTodos }) {
                     : todo.status === "in-process"
                       ? "✔ Mark as Done"
                       : "↩ Move to Todos"}
-                </Button>
+                </Button> */}
 
                 {/* 🔽 Status Change Dropdown */}
                 <Select
@@ -408,8 +433,9 @@ function TodoItem({ todo, refreshTodos }) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
                       <AlertDialogAction
+                        className="cursor-pointer"
                         onClick={handleDelete}
                       >
                         Delete
@@ -418,14 +444,14 @@ function TodoItem({ todo, refreshTodos }) {
                   </AlertDialogContent>
                 </AlertDialog>
 
-                <Button
+                {/* <Button
                   onClick={() => setIsDialogOpen(true)}
                   variant="secondary"
                   size="sm"
                   className="hover:bg-gray-200 transition cursor-pointer"
                 >
                   <SquarePen size={16} /> Edit
-                </Button>
+                </Button> */}
               </>
             )}
 
@@ -437,7 +463,7 @@ function TodoItem({ todo, refreshTodos }) {
                 size="sm"
                 className="hover:bg-neutral-200 cursor-pointer text-neutral-700 transition"
               >
-                <MessageSquare size={16} /> Add Comment
+                <MessageCircle size={16} /> Add Comment
               </Button>
             )}
           </div>
@@ -458,11 +484,11 @@ function TodoItem({ todo, refreshTodos }) {
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder="Title"
               />
-              <Input
+              {/* <Input
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 placeholder="Phone"
-              />
+              /> */}
 
               {/* ✅ Shadcn Date + Time Picker */}
               <div className="flex space-x-2">
@@ -501,11 +527,10 @@ function TodoItem({ todo, refreshTodos }) {
                       }}
                       initialFocus
                     />
-
                   </PopoverContent>
                 </Popover>
 
-                <Input
+                {/* <Input
                   type="time"
                   value={
                     editDate
@@ -527,7 +552,7 @@ function TodoItem({ todo, refreshTodos }) {
                     }
                   }}
                   className="w-[120px]"
-                />
+                /> */}
 
               </div>
 
@@ -540,7 +565,7 @@ function TodoItem({ todo, refreshTodos }) {
 
             {/* ✅ Priority Selection */}
             <div>
-              <label className="text-sm font-medium text-gray-700">Priority</label>
+              {/* <label className="text-sm font-medium text-gray-700">Priority</label> */}
               <Select
                 value={priority}
                 onValueChange={(val) => setPriority(val)}
@@ -557,7 +582,7 @@ function TodoItem({ todo, refreshTodos }) {
             </div>
 
             {/* StausNote */}
-            <div className="space-y-1">
+            {/* <div className="space-y-1">
               <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
                 <SelectTrigger className="w-fit">
                   <SelectValue placeholder="Select current progress..." />
@@ -577,11 +602,11 @@ function TodoItem({ todo, refreshTodos }) {
                   <SelectItem value="on-hold">On hold / Paused</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             {/* Comments inside Edit Dialog */}
             <div className="mt-4">
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <MessageSquare size={16} /> Comments ({comments.length})
+                <MessageCircle size={16} /> Comments ({comments.length})
               </h4>
               <div
                 className={`space-y-3 mt-3 overflow-y-auto pr-2 

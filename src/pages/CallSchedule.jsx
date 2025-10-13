@@ -126,9 +126,17 @@ function CallSchedule() {
     // Add / Update
     const handleSave = async () => {
         if (!campaign || !businessType || !ownerName || !date) {
-            toast.error("⚠️ Campaign, Business Type, Owner Name, Date required");
+            toast.error("Campaign, Business Type, Owner Name, Date required");
             return;
         }
+
+        // ✅ Mobile number validation
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (!ownerContact || !phoneRegex.test(ownerContact)) {
+            toast.error("Please enter a valid 10-digit mobile number");
+            return;
+        }
+
         try {
             if (editId) {
                 const ref = doc(db, "calls", editId);
@@ -171,7 +179,7 @@ function CallSchedule() {
     const handleDelete = async (id) => {
         try {
             await deleteDoc(doc(db, "calls", id));
-            toast.success("🗑️ Lead deleted");
+            toast.success("Lead deleted");
             fetchCalls();
         } catch (err) {
             console.error(err);
@@ -482,11 +490,11 @@ function CallSchedule() {
                                     </Popover>
 
                                     <div className="flex gap-2">
-                                        <Button onClick={handleSave}>
+                                        <Button onClick={handleSave} className="cursor-pointer">
                                             {editId ? "Update" : "Save"}
                                         </Button>
                                         {editId && (
-                                            <Button variant="outline" onClick={resetForm}>
+                                            <Button className="cursor-pointer" variant="outline" onClick={resetForm}>
                                                 Cancel
                                             </Button>
                                         )}
@@ -559,7 +567,7 @@ function CallSchedule() {
                                             </TableCell>
                                             <TableCell className="flex gap-2">
                                                 <Button
-                                                className="cursor-pointer"
+                                                    className="cursor-pointer"
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => {
@@ -579,7 +587,7 @@ function CallSchedule() {
                                                         setOpen(true);
                                                     }}
                                                 >
-                                                    <Edit size={16} className="text-neutral-700"/>
+                                                    <Edit size={16} className="text-neutral-700" />
                                                 </Button>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
@@ -598,7 +606,6 @@ function CallSchedule() {
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                             <AlertDialogAction
                                                                 onClick={() => handleDelete(c.id)}
-                                                                className="bg-zinc-700 hover:bg-zinc-800"
                                                             >
                                                                 Delete
                                                             </AlertDialogAction>

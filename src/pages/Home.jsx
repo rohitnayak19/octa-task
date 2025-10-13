@@ -137,7 +137,7 @@ function Home() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-8xl mx-auto p-4">
+      <div className="max-w-8xl mx-auto px-2 md:p-4">
         {!currentUser ? (
           <p className="text-center text-gray-600 text-lg">
             Please login to see your todos.
@@ -145,24 +145,24 @@ function Home() {
         ) : (
           <>
             {/* ✅ Welcome Section */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-gradient-to-r from-white to-yellow-50/10 py-4 border-gray-100 mb-4 transition-all duration-300">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-gradient-to-r from-white to-yellow-50/10 border-gray-100 mb-2 transition-all duration-300">
 
               {/* 👋 Welcome Text */}
               <div>
-                <h2 className="text-2xl drop-shadow-sm font-semibold text-gray-800 flex items-center gap-2">
-                  Welcome,&nbsp;
+                <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+                  Welcome,
                   <span className="text-yellow-300  text-2xl font-semibold tracking-tight">
                     {currentUser.name || currentUser.email}
                   </span>
                 </h2>
-                <p className="text-sm drop-shadow-lg text-gray-500 mt-1 italic">
+                <p className="text-sm text-gray-500 mt-1 italic">
                   “{randomQuote}”
                 </p>
               </div>
 
               {/* 💼 Manager Code */}
               {role === "user" && currentUser.devCode && (
-                <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-yellow-50 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-3 border bg-white/80 px-2 py-1 rounded-lg hover:shadow-sm transition-all duration-200">
                   <span className="text-sm font-medium text-gray-700">
                     <span className="text-gray-500">Manager Code:</span>{" "}
                     <span className="font-mono text-gray-800">{currentUser.devCode}</span>
@@ -171,7 +171,7 @@ function Home() {
                     onClick={handleCopyDevCode}
                     size="sm"
                     variant="outline"
-                    className="border-yellow-300 cursor-pointer text-yellow-700 hover:bg-yellow-100 active:scale-105 transition-all"
+                    className="border-yellow-300 cursor-pointer hover:bg-yellow-100 active:scale-105 transition-all"
                   >
                     {copied ? "Copied!" : "Copy"}
                   </Button>
@@ -188,7 +188,7 @@ function Home() {
                       <DialogTrigger asChild>
                         <Button
                           variant="default"
-                          className="flex items-center cursor-pointer transition-all ease-in duration-200 gap-2 shadow-md active:scale-105"
+                          className="flex items-center cursor-pointer transition-all ease-in duration-300 gap-2 shadow-md hover:shadow-lg active:scale-105"
                         >
                           <Plus size={16} /> Add Task
                         </Button>
@@ -215,7 +215,7 @@ function Home() {
                   <TabsList className="grid grid-cols-4 w-full mb-2 rounded-lg">
                     {tabs.map((tab) => (
                       <TabsTrigger
-                        className="p-0 text-sm font-medium bg-gray-100"
+                        className="p-0 text-sm cursor-pointer font-medium bg-gray-100"
                         key={tab.key}
                         value={tab.key}
                       >
@@ -230,10 +230,11 @@ function Home() {
                     .map((tab) => (
                       <TabsContent key={tab.key} value={tab.key}>
                         <Card>
-                          <CardHeader>
+                          {/* Tab headers todo in-process done */}
+                          {/* <CardHeader>
                             <CardTitle>{tab.label}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
+                          </CardHeader> */}
+                          <CardContent className="px-1 md:px-4">
                             <TodoList activeTab={tab.key} />
                           </CardContent>
                         </Card>
@@ -254,7 +255,7 @@ function Home() {
                             {clients.map((client) => (
                               <li
                                 key={client.id}
-                                className="flex items-center justify-between bg-white p-4 rounded-md shadow hover:shadow-md transition"
+                                className="flex items-center justify-between p-4 rounded-md shadow hover:shadow-md transition"
                               >
                                 <div>
                                   <p className="font-medium">{client.name}</p>
@@ -299,10 +300,10 @@ function Home() {
                                     <AlertDialogTrigger asChild>
                                       <Button
                                         size="sm"
-                                        className="flex items-center gap-1 text-red-700"
+                                        className="flex items-center cursor-pointer gap-1 text-red-700"
                                         variant="outline"
                                       >
-                                        <X size={14} /> Reject
+                                        <Trash2 size={14} /> Remove
                                       </Button>
                                     </AlertDialogTrigger>
 
@@ -315,12 +316,12 @@ function Home() {
                                       </AlertDialogHeader>
 
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
                                         <AlertDialogAction
-                                          className="bg-red-600 text-white hover:bg-red-700"
+                                        className="cursor-pointer"
                                           onClick={() => handleClientAction(client.id, "delete")}
                                         >
-                                          Yes, Reject
+                                          Yes, Remove
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
