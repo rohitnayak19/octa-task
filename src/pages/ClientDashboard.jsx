@@ -71,8 +71,8 @@ function ClientDashboard() {
   }, [currentUser]);
 
   const tabs = [
-    { key: "todos", label: "Todos" },
-    { key: "in-process", label: "In Process" },
+    { key: "todos", label: "Todo" },
+    { key: "in-process", label: "In Progress" },
     { key: "done", label: "Done" },
   ];
 
@@ -318,12 +318,12 @@ function ClientDashboard() {
           {tabs.map((tab) => (
             <TabsContent key={tab.key} value={tab.key}>
               <Card>
-                <CardHeader>
+                {/* <CardHeader>
                   <CardTitle>{tab.label}</CardTitle>
-                </CardHeader>
+                </CardHeader> */}
                 <CardContent>
                   {developerData ? (
-                    <TodoList activeTab={tab.key} userId={developerData.id} />
+                    <TodoList activeTab={tab.key} userId={developerData.id}  role="client"  />
                   ) : (
                     <p className="text-gray-500">No Manager data found.</p>
                   )}

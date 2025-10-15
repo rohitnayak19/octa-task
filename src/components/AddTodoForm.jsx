@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -40,6 +40,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const [timePart, setTimePart] = useState("");
   const [category, setCategory] = useState(defaultCategory || "todos");
   const [priority, setPriority] = useState("medium");
+  const [selectedClients, setSelectedClients] = useState([]);
   // const [statusNote, setStatusNote] = useState("");
 
 
@@ -73,6 +74,20 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       return;
     }
 
+    // ✅ Fetch creator name automatically
+    let createdByName = "Unknown User";
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        createdByName = userSnap.data().name || "Unnamed User";
+      } else {
+        createdByName = currentUser.displayName || "Unnamed User";
+      }
+    } catch (err) {
+      console.warn("Could not fetch user name:", err);
+    }
+
     let finalDate = null;
     if (datePart) {
       finalDate = new Date(datePart);
@@ -84,8 +99,12 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
     } else {
       finalDate = new Date();
     }
-
+    
     try {
+      // ✅ Make sure the creator (client) can also see the task
+      const assigned = Array.from(
+        new Set([...(selectedClients || []), currentUser.uid])
+      );
       await addDoc(collection(db, "todos"), {
         title,
         // phone,
@@ -97,6 +116,8 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         // statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
+        createdByName,
+        assignedClients: assigned,
       });
 
       setTitle("");
@@ -163,6 +184,20 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         finalDate = isNaN(d) ? new Date() : d;
       }
 
+      // ✅ Fetch creator name automatically (no input field)
+      let createdByName = "Unknown User";
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          createdByName = userSnap.data().name || "Unnamed User";
+        } else {
+          createdByName = currentUser.displayName || "Unnamed User";
+        }
+      } catch (err) {
+        console.warn("Could not fetch user name:", err);
+      }
+
       await addDoc(collection(db, "todos"), {
         title: parsed.title,
         // phone: parsed.phone,
@@ -174,6 +209,8 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         // statusNote: parsed.statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
+        createdByName,
+        assignedClients: selectedClients || [],
       });
 
       setPrompt("");
@@ -220,10 +257,17 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           /> */}
-          <Input
+          <Textarea
+            className={"mb-2"}
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                e.preventDefault();
+                handleAddManual();
+              }
+            }}
           />
 
           {/* Date + Time */}
@@ -260,28 +304,28 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
 
           <div className="flex gap-1">
             {/* Category */}
-          <Select value={category} onValueChange={(val) => setCategory(val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todo</SelectItem>
-              <SelectItem value="in-process">In Process</SelectItem>
-              <SelectItem value="done">Done</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={category} onValueChange={(val) => setCategory(val)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todo</SelectItem>
+                <SelectItem value="in-process">In Process</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Priority */}
-          <Select value={priority} onValueChange={(val) => setPriority(val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Priority */}
+            <Select value={priority} onValueChange={(val) => setPriority(val)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {/* StausNote */}
           {/* <div className="space-y-1">
@@ -306,7 +350,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             </Select>
           </div> */}
 
-          <Button onClick={handleAddManual} className="w-full cursor-pointer">
+          <Button onClick={handleAddManual} on className="w-full cursor-pointer">
             Add Task
           </Button>
         </div>
@@ -323,6 +367,12 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
             placeholder="Type your task in natural language..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                e.preventDefault();
+                handleAddAi();
+              }
+            }}
           />
           <Button onClick={handleAddAi} className="w-full cursor-pointer" disabled={loading}>
             {loading ? "Adding..." : "Add Task with AI"}

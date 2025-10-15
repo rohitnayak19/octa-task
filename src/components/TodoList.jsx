@@ -5,6 +5,8 @@ import TodoItem from "./TodoItem";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +24,10 @@ import {
 function TodoList({ activeTab, role, userId }) {
   const [todos, setTodos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
+  // const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // const [selectedTodo, setSelectedTodo] = useState(null);
 
   const [priorityFilter, setPriorityFilter] = useState("all");
 
@@ -30,11 +35,23 @@ function TodoList({ activeTab, role, userId }) {
     const targetUserId = userId || auth.currentUser?.uid;
     if (!targetUserId) return;
 
-    let q = query(
-      collection(db, "todos"),
-      where("userId", "==", targetUserId),
-      where("status", "==", activeTab)
-    );
+    let q;
+
+    if (role === "client") {
+      q = query(
+        collection(db, "todos"),
+        where("assignedClients", "array-contains", auth.currentUser.uid),
+        where("status", "==", activeTab)
+      );
+    } else {
+      // ✅ Manager/Admin/User sees their own tasks
+      q = query(
+        collection(db, "todos"),
+        where("userId", "==", targetUserId),
+        where("status", "==", activeTab)
+      );
+    }
+
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let todosData = snapshot.docs.map((doc) => ({
@@ -46,6 +63,19 @@ function TodoList({ activeTab, role, userId }) {
 
     return () => unsubscribe();
   }, [activeTab, userId]);
+
+  const formatStatusLabel = (status) => {
+    switch (status) {
+      case "todos":
+        return "To-Do";
+      case "in-process":
+        return "In Progress";
+      case "done":
+        return "Done";
+      default:
+        return status;
+    }
+  };
 
   // ✅ Today, Tomorrow, Overdue counts
   const today = new Date();
@@ -88,23 +118,51 @@ function TodoList({ activeTab, role, userId }) {
         : todos;
 
   // ✅ Combine with priority filter
-  const filteredTodos =
-    priorityFilter === "all"
-      ? filteredTodosByDate
-      : filteredTodosByDate.filter(
-        (todo) => todo.priority?.toLowerCase() === priorityFilter
+  const filteredTodos = filteredTodosByDate
+    // 🔹 Priority filter
+    .filter((todo) =>
+      priorityFilter === "all"
+        ? true
+        : todo.priority?.toLowerCase() === priorityFilter
+    )
+    // 🔹 Search filter
+    .filter((todo) => {
+      if (!searchTerm.trim()) return true; // if empty, show all
+      const term = searchTerm.toLowerCase();
+      return (
+        todo.title?.toLowerCase().includes(term) ||
+        todo.description?.toLowerCase().includes(term)
       );
+    });
+
 
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start gap-2 justify-between mb-2">
         <h2 className="text-xl font-bold px-2">
-          {activeTab === "todos"
-            ? "TO-DO List"
-            : `${activeTab.toUpperCase()} List`}
+          {formatStatusLabel(activeTab)} List
         </h2>
-        {/* 👇 Date & Quick Filters */}
+
+        {/* 👇 Date & Quick Filters Search term */}
         <div className="flex gap-4 flex-wrap items-center">
+          <div className="relative w-full md:w-[350px]">
+            <Input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className=""
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
           <Select
             onValueChange={(value) => {
               if (value === "all") setSelectedDate(null);
@@ -145,7 +203,7 @@ function TodoList({ activeTab, role, userId }) {
                   )}
                 </div>
               </SelectItem>
-              <SelectItem value="choose">📅 Choose Date</SelectItem>
+              <SelectItem value="choose">Choose Date</SelectItem>
             </SelectContent>
           </Select>
 
@@ -182,10 +240,10 @@ function TodoList({ activeTab, role, userId }) {
       </Dialog>
 
       {/* ✅ Show tasks */}
-      <div className="columns-1 md:columns-2 lg:columns-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 col-gap-2 gap-2">
         {filteredTodos.length > 0 ? (
           filteredTodos.map((todo) => (
-            <TodoItem key={todo.id} todo={todo} role={role} refreshTodos={() => { }} />
+            <TodoItem key={todo.id} todo={todo} role={role} userId={userId}  currentUser={auth.currentUser}  refreshTodos={() => { }} />
           ))
         ) : (
           <div className="col-span-full text-center py-10 bg-gray-50 border rounded-lg">

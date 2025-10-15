@@ -13,6 +13,7 @@ import {
   updateDoc,
   deleteDoc,
   Timestamp,
+  where, arrayUnion, arrayRemove
 } from "firebase/firestore";
 
 // shadcn components
@@ -20,6 +21,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -31,13 +33,28 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent
+}
+  from "@/components/ui/tooltip";
 import {
   MessageCircle,
   Trash2,
   Calendar as CalendarIcon,
   Expand,
   Clock,
+  ListTodo,
+  SquarePen,
+  MessageSquare,
+  Phone,
+  Plus,
+  Check,
+  Square,
+  CheckSquare,
+  User,
+  UserPlus,
   X,
   Save,
 } from "lucide-react";
@@ -62,17 +79,27 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-function TodoItem({ todo, refreshTodos }) {
-  const { role } = useAuth();
+function TodoItem({ todo, refreshTodos, userId }) {
+  const { currentUser, role } = useAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [subtaskInput, setSubtaskInput] = useState("");
+  const [isSubtaskOpen, setIsSubtaskOpen] = useState(false);
+
+  const clientCount = todo.assignedClients
+    ? todo.assignedClients.filter((id) => id !== todo.userId).length
+    : 0;
 
   // ✅ Edit state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTodo, setSelectedTodo] = useState(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false); // for client comment
   const [editTitle, setEditTitle] = useState(todo.title);
-  const [editPhone, setEditPhone] = useState(todo.phone);
+  // const [editPhone, setEditPhone] = useState(todo.phone);
   const [editDate, setEditDate] = useState(
     todo.date?.seconds
       ? new Date(todo.date.seconds * 1000).toISOString()
@@ -80,7 +107,7 @@ function TodoItem({ todo, refreshTodos }) {
   );
   const [editDescription, setEditDescription] = useState(todo.description || "");
   const [priority, setPriority] = useState(todo.priority || "medium");
-  const [statusNote, setStatusNote] = useState(todo.statusNote);
+  // const [statusNote, setStatusNote] = useState(todo.statusNote);
 
   const fetchComments = async () => {
     const commentsRef = collection(db, "todos", todo.id, "comments");
@@ -113,25 +140,96 @@ function TodoItem({ todo, refreshTodos }) {
     setComments(commentsData);
   };
 
-
   useEffect(() => {
     fetchComments();
   }, []);
 
-  // ✅ Toggle Status (Developer only)
-  const toggleStatus = async () => {
-    if (role === "client") return;
+  //Fetch Approved Clients (for manager only)
+  useEffect(() => {
+    if (role !== "client") {
+      let targetUserId;
+
+      // 🧠 Admin viewing a manager’s dashboard (use manager's UID)
+      if (role === "admin" && userId) {
+        targetUserId = userId;
+      }
+      // 🧠 Manager or Admin viewing own dashboard
+      else {
+        targetUserId = currentUser?.uid;
+      }
+
+      if (!targetUserId) return;
+
+      const fetchClients = async () => {
+        try {
+          const q = query(
+            collection(db, "users"),
+            where("linkedUserId", "==", targetUserId),
+            where("status", "==", "approved")
+          );
+
+          const snapshot = await getDocs(q);
+          const clientsData = snapshot.docs.map((doc) => ({
+            uid: doc.id,
+            ...doc.data(),
+          }));
+
+          setClients(clientsData);
+        } catch (error) {
+          console.error("Error fetching clients:", error);
+        }
+      };
+
+      fetchClients();
+    }
+  }, [role, currentUser, userId]);
+
+  // // ✅ Toggle Status (Developer only)
+  // const toggleStatus = async () => {
+  //   if (role === "client") return;
+  //   const todoRef = doc(db, "todos", todo.id);
+  //   let newStatus = "todos";
+
+  //   if (todo.status === "todos") newStatus = "in-process";
+  //   else if (todo.status === "in-process") newStatus = "done";
+  //   else newStatus = "todos";
+
+  //   await updateDoc(todoRef, { status: newStatus });
+  //   refreshTodos();
+  // };
+
+  // Handle subtasks
+  const handleAddSubtask = async () => {
+    if (!subtaskInput.trim()) return;
+    const newSubtask = {
+      id: Date.now().toString(),
+      title: subtaskInput,
+      completed: false,
+    };
     const todoRef = doc(db, "todos", todo.id);
-    let newStatus = "todos";
-
-    if (todo.status === "todos") newStatus = "in-process";
-    else if (todo.status === "in-process") newStatus = "done";
-    else newStatus = "todos";
-
-    await updateDoc(todoRef, { status: newStatus });
+    await updateDoc(todoRef, { subtasks: arrayUnion(newSubtask) });
+    setSubtaskInput("");
     refreshTodos();
+    toast.success("Subtask added successfully");
   };
 
+  const handleToggleSubtask = async (subtask) => {
+    const updated = todo.subtasks.map((s) =>
+      s.id === subtask.id ? { ...s, completed: !s.completed } : s
+    );
+    const todoRef = doc(db, "todos", todo.id);
+    await updateDoc(todoRef, { subtasks: updated });
+    refreshTodos();
+    toast.success(`Subtask marked as ${subtask.completed ? "incomplete" : "complete"}`);
+  };
+
+  const handleDeleteSubtask = async (subId) => {
+    const updated = todo.subtasks.filter((s) => s.id !== subId);
+    const todoRef = doc(db, "todos", todo.id);
+    await updateDoc(todoRef, { subtasks: updated });
+    refreshTodos();
+    toast.success("Subtask deleted");
+  };
   const handleDelete = async (e) => {
     if (role === "client") return;
     await deleteDoc(doc(db, "todos", todo.id));
@@ -172,6 +270,30 @@ function TodoItem({ todo, refreshTodos }) {
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Failed to add comment.");
+    }
+  };
+  // ✅ Toggle Assign / Unassign Client
+  const handleToggleClient = async (clientId) => {
+    try {
+      const todoRef = doc(db, "todos", todo.id);
+      const alreadyAssigned = todo.assignedClients?.includes(clientId);
+
+      await updateDoc(todoRef, {
+        assignedClients: alreadyAssigned
+          ? arrayRemove(clientId)
+          : arrayUnion(clientId),
+      });
+
+      toast.success(
+        alreadyAssigned
+          ? "Client removed from this task"
+          : "Client assigned successfully"
+      );
+
+      refreshTodos(); // reload tasks after update
+    } catch (error) {
+      console.error("Error assigning client:", error);
+      toast.error("Failed to update assignment.");
     }
   };
 
@@ -261,7 +383,7 @@ function TodoItem({ todo, refreshTodos }) {
     <>
       <Card onClick={() => {
         if (!isAlertOpen) setIsDialogOpen(true), setIsCommentDialogOpen(true)
-      }} className="relative px-1 py-2 overflow-hidden rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-pointer mb-2 md:mb-3">
+      }} className={`relative px-1 ${role !== "client" ? "h-[160px]" : "h-[112px]"} py-2 overflow-hidden shadow-sm hover:shadow-md rounded-sm hover:scale-[1.01] transition-all duration-200 cursor-pointer`}>
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
@@ -274,38 +396,92 @@ function TodoItem({ todo, refreshTodos }) {
             `,
           }}
         />
-        <span className={`absolute top-0 left-0 rounde h-[5px] w-full 
-          ${todo.priority === "high" ? "bg-red-200" : todo.priority === "medium" ? "bg-yellow-200" : todo.priority === "low" ? "bg-green-200" : "bg-gray-300"}
-          `}></span>
-        <CardContent className="relative z-10 px-3 md:px-4">
+        <span
+          className={`absolute top-0 left-0 h-[5px] w-full rounded-t-lg
+    ${todo.priority === "high"
+              ? "bg-gradient-to-r from-red-300 via-red-200 to-red-100"
+              : todo.priority === "medium"
+                ? "bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-100"
+                : todo.priority === "low"
+                  ? "bg-gradient-to-r from-green-300 via-green-200 to-green-100"
+                  : "bg-gray-200"
+            }`}
+        ></span>
+
+        <CardContent className="relative z-10 px-2">
           {/* Title + Description */}
           <div className="flex justify-between">
-            <h3 className="text-xl font-semibold text-neutral-900">
+            <h3 className="font-semibold text-lg text-neutral-800 line-clamp-1">
               {todo.title}
             </h3>
-            <div className="flex items-center">
-              <div className="flex items-center text-sm gap-1 px-2 py-1 text-neutral-700 bg-white/70 rounded-md">
-                <MessageCircle size={16} className="text-gray-500" />{" "}
+            <div className="flex gap-1">
+              <div className="flex items-center gap-px bg-gray-50 px-1 rounded-sm text-xs text-neutral-600 cursor-pointer">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MessageCircle className="cursor-pointer" size={14} />{" "}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Comments</p>
+                  </TooltipContent>
+                </Tooltip>
                 {comments.length}
               </div>
-              {/* <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedTodo(todo);
-                  setIsDialogOpen(true);
-                }}
-                className="text-blue-600 cursor-pointer hover:text-blue-700 underline font-medium"
-              >
-                <Expand size={18}/>
-              </Button> */}
+
+              {/* Tooltip for Expand Button */}
+              <Tooltip>
+                <TooltipTrigger asChild className="p-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTodo(todo);
+                      setIsDetailDialogOpen(true);
+                    }}
+                    className="text-gray-500 bg-gray-50 cursor-pointer font-medium"
+                  >
+                    <Expand />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View more</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Tooltip for Assigned Clients */}
+              {/* {role !== "client" && (
+                  <Tooltip>
+                    <TooltipTrigger asChild className="">
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAssignDialogOpen(true)
+                        }}
+                        className="text-gray-500 cursor-pointer font-medium"
+                      >
+                        <UserPlus />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add Clients</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )} */}
             </div>
           </div>
-          <p className="text-gray-600 text-sm leading-snug mt-1">{todo.description}</p>
+          <p className="text-gray-600 text-sm leading-snug line-clamp-1 mt-1">{todo.description}</p>
+          {/* 
+          {todo.assignedClients?.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Assigned to {todo.assignedClients.length} client(s)
+            </p>
+          )} */}
+
 
           {/* Status + Deadline + Priority */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="flex items-center flex-wrap gap-1 mt-2">
             <Badge
               className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${todo.status === "done"
                 ? "bg-green-100 text-green-700"
@@ -323,6 +499,19 @@ function TodoItem({ todo, refreshTodos }) {
 
             {renderDeadlineBadge(todo.date)}
             {renderPriorityBadge(todo.priority)}
+            {/* Actual Date */}
+            <div className="flex items-center gap-px shadow px-1 py-px rounded-2xl text-xs">
+              <Clock size={16} className="text-gray-500" />
+              <span className="font-medium text-sm text-neutral-700">
+                {formatDate(todo.date)?.toLocaleString("en-IN", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour12: true,
+                  timeZone: "Asia/Kolkata",
+                })}
+              </span>
+            </div>
 
             {/* Status + Deadline + Priority */}
             {/* {todo.statusNote && (
@@ -349,23 +538,19 @@ function TodoItem({ todo, refreshTodos }) {
               </p>
             )} */}
 
-            {/* Actual Date */}
-            <div className="flex items-center gap-2 px-2 py-[2px] text-xs bg-white/70 border rounded-2xl backdrop-blur-sm shadow-sm">
-              <Clock size={16} className="text-gray-500" />
-              <span className="font-medium text-sm text-neutral-700">
-                {formatDate(todo.date)?.toLocaleString("en-IN", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                  hour12: true,
-                  timeZone: "Asia/Kolkata",
-                })}
-              </span>
-            </div>
+            {/*Add Comment */}
+            {/* <Button
+              onClick={() => setIsCommentDialogOpen(true)}
+              variant="secondary"
+              size="sm"
+              className="hover:bg-neutral-200 cursor-pointer text-neutral-700 transition"
+            >
+              <MessageCircle size={16} /> Add Comment
+            </Button> */}
           </div>
 
           {/* Stats Row */}
-          <div className="flex items-center gap-3 border-t mt-3 pt-2 text-sm text-gray-500">
+          <div className="flex items-center gap-3 border-t mt-2 pt-2 text-sm text-gray-500">
             {/* <div className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-md">
               <MessageSquare size={18} className="text-gray-500" />{" "}
               {comments.length}
@@ -377,7 +562,7 @@ function TodoItem({ todo, refreshTodos }) {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-between gap-2">
             {/* Developer Buttons */}
             {role !== "client" && (
               <>
@@ -394,56 +579,87 @@ function TodoItem({ todo, refreshTodos }) {
                       : "↩ Move to Todos"}
                 </Button> */}
 
-                {/* 🔽 Status Change Dropdown */}
-                <Select
-                  value={todo.status}
-                  onValueChange={async (value) => {
-                    const todoRef = doc(db, "todos", todo.id);
-                    await updateDoc(todoRef, { status: value });
-                    refreshTodos();
-                  }}
-                >
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Change Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todo</SelectItem>
-                    <SelectItem value="in-process">In Progress</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* 🔽 Status Change Dropdown and Add clients */}
+                <div className="flex gap-1 items-center">
+                  <Select
+                    value={todo.status}
+                    onValueChange={async (value) => {
+                      const todoRef = doc(db, "todos", todo.id);
+                      await updateDoc(todoRef, { status: value });
+                      refreshTodos();
+                    }}
+                  >
+                    <SelectTrigger className="w-[109px] text-xs pl-2">
+                      <SelectValue placeholder="Change Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todo</SelectItem>
+                      <SelectItem value="in-process">In Progress</SelectItem>
+                      <SelectItem value="done">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      onClick={(e) => e.stopPropagation()}
-                      variant="outline"
-                      size="sm"
-                      className="hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
-                    >
-                      <Trash2 size={16} stroke="red" />
-                    </Button>
-                  </AlertDialogTrigger>
-
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure you want to delete this task?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. The task and its comments will be permanently removed.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="cursor-pointer"
-                        onClick={handleDelete}
+                  <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        variant="outline"
+                        size="xs"
+                        className="rounded-sm hover:text-red-800 transition cursor-pointer bg-gray-50 px-3 py-2"
                       >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 size={16} stroke="red" />
+                      </button>
+                    </AlertDialogTrigger>
 
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to delete this task?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. The task and its comments will be permanently removed.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="cursor-pointer"
+                          onClick={handleDelete}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+
+                <div className="flex items-center px-2 rounded-sm bg-gray-50">
+                  {/* Add Clients button */}
+                  {role !== "client" && (
+                    <Tooltip>
+                      <TooltipTrigger asChild className="">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAssignDialogOpen(true)
+                          }}
+                          className="text-gray-500 rounded-sm cursor-pointer font-medium"
+                        >
+                          <UserPlus size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Add Clients</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* 👥 Client Count */}
+                  {clientCount > 0 && (
+                    <p className="text-xs text-gray-500 mb-1">
+                      {clientCount} {clientCount > 1 ? "s" : ""}
+                    </p>
+                  )}
+
+                </div>
                 {/* <Button
                   onClick={() => setIsDialogOpen(true)}
                   variant="secondary"
@@ -456,7 +672,7 @@ function TodoItem({ todo, refreshTodos }) {
             )}
 
             {/* Client Button -> Add Comment */}
-            {role === "client" && (
+            {/* {role === "client" && (
               <Button
                 onClick={() => setIsCommentDialogOpen(true)}
                 variant="secondary"
@@ -465,16 +681,222 @@ function TodoItem({ todo, refreshTodos }) {
               >
                 <MessageCircle size={16} /> Add Comment
               </Button>
-            )}
+            )} */}
           </div>
         </CardContent>
       </Card>
+      {/* ✅ Assign Clients Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Task to Clients</DialogTitle>
+          </DialogHeader>
+
+          {clients.length > 0 ? (
+            <div className="space-y-2">
+              {clients.map((client) => {
+                const alreadyAssigned = todo.assignedClients?.includes(client.uid);
+                return (
+                  <div
+                    key={client.uid}
+                    className="flex items-center justify-between border rounded-md px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{client.name}</p>
+                      <p className="text-xs text-gray-500">{client.email}</p>
+                    </div>
+                    <Button
+                      className={'cursor-pointer'}
+                      size="sm"
+                      variant={alreadyAssigned ? "outline" : "secondary"}
+                      onClick={() => handleToggleClient(client.uid)}
+                    >
+                      {alreadyAssigned ? (
+                        <>
+                          <X /> Remove
+                        </>
+                      ) : (
+                        <>
+                          <Check /> Assign
+                        </>
+                      )}
+
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm text-center py-2">
+              No approved clients found.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 🟢Expand (Details) Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-lg rounded-2xl shadow-2xl border border-gray-200 bg-white/90 backdrop-blur-sm p-4">
+          <DialogHeader>
+            <div className="flex justify-between items-start">
+              <DialogTitle className="text-3xl font-bold text-neutral-700">
+                {todo.title}
+              </DialogTitle>
+
+              {/* Optional: AI Badge
+              {todo.createdMethod === "ai" && (
+                <Badge className="bg-purple-100 text-purple-700 text-xs font-medium">
+                  ✨ AI Created
+                </Badge>
+              )} */}
+            </div>
+            <p className="text-gray-500 text-sm">
+              Task Overview and Details
+            </p>
+          </DialogHeader>
+
+          {/* ✅ Description */}
+          <div className="rounded-lg px-1 py-2 tracking-tight">
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+              {todo.description || "No description provided."}
+            </p>
+          </div>
+
+          {/* ✅ Status / Priority / Date Section */}
+          <div className="flex flex-wrap gap-1">
+            {/* Status */}
+            <Badge
+              className={`px-3 py-1 rounded-full text-xs font-medium shadow-xs ${todo.status === "done"
+                ? "bg-green-100 text-green-700"
+                : todo.status === "in-process"
+                  ? "bg-orange-100 text-orange-700"
+                  : "bg-gray-100 text-gray-700"
+                }`}
+            >
+              {todo.status === "done"
+                ? "Completed"
+                : todo.status === "in-process"
+                  ? "In Progress"
+                  : "Todo"}
+            </Badge>
+
+            {/* Priority */}
+            <Badge
+              className={`px-3 py-1 rounded-full text-xs font-medium shadow-xs ${todo.priority === "high"
+                ? "bg-red-100 text-red-700"
+                : todo.priority === "medium"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-green-100 text-green-700"
+                }`}
+            >
+              {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)}
+            </Badge>
+
+            {/* Due Date */}
+            {todo.date && (
+              <Badge
+                variant="outline"
+                className="text-neutral-700 border-gray-300 bg-white shadow-xs"
+              >
+                <CalendarIcon />{" "}
+                {new Date(todo.date.seconds * 1000).toLocaleString("en-IN", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Badge>
+            )}
+          </div>
+
+          {/* Deadline Progress */}
+          {/* {todo.date && (
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span>Deadline</span>
+                <span>
+                  {(() => {
+                    const diffDays = Math.ceil(
+                      (new Date(todo.date.seconds * 1000) - new Date()) / (1000 * 60 * 60 * 24)
+                    );
+                    return diffDays > 0
+                      ? `${diffDays} day${diffDays > 1 ? "s" : ""} left`
+                      : diffDays === 0
+                        ? "Due today!"
+                        : `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) > 1 ? "s" : ""}`;
+                  })()}
+                </span>
+              </div>
+
+              <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className={`h-full transition-all ${(() => {
+                      const diff = new Date(todo.date.seconds * 1000) - new Date();
+                      if (diff < 0) return "bg-red-400";     // overdue
+                      if (diff < 2 * 86400000) return "bg-yellow-400"; // due soon
+                      return "bg-green-400";                 // still time
+                    })()
+                    }`}
+                  style={{
+                    width: (() => {
+                      const createdAt = todo.createdAt?.seconds
+                        ? new Date(todo.createdAt.seconds * 1000)
+                        : new Date();
+
+                      const deadline = new Date(todo.date.seconds * 1000);
+                      let total = deadline - createdAt;
+                      const passed = new Date() - createdAt;
+
+                      // 🧩 Prevent invalid or 0-duration tasks
+                      if (total <= 0) total = 1000 * 60 * 60 * 24; // assume 1 day
+                      if (passed < 0) return "0%"; // future-created tasks (edge case)
+
+                      const pct = Math.min(100, Math.max(0, (passed / total) * 100));
+                      return `${pct}%`;
+                    })(),
+                  }}
+                ></div>
+              </div>
+            </div>
+          )} */}
+
+          {/* ✅ Creator / Created At Section */}
+          <div className=" border-t pt-4 text-sm text-gray-600 space-y-1">
+            <p className="flex items-center gap-1">
+              <User size={15} className="text-neutral-700" />
+              <span className="font-medium text-gray-800">Created by:</span>{" "}
+              {todo.createdByName || "Unknown User"}
+            </p>
+            <p className="flex items-center gap-1">
+              <CalendarIcon size={14} className="text-neutral-600" />
+              <span className="font-medium text-gray-800">Created on:</span>{" "}
+              {todo.createdAt
+                ? new Date(todo.createdAt.seconds * 1000).toLocaleString("en-IN", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+                : "Unknown"}
+            </p>
+          </div>
+
+          {/* ✅ Optional Footer Buttons */}
+          {/* <div className="flex justify-end gap-2 border-t pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDetailDialogOpen(false)}
+              className="cursor-pointer"
+            >
+              Close
+            </Button>
+          </div> */}
+        </DialogContent>
+      </Dialog>
 
       {/* ✅ Edit Dialog for Developer */}
       {role !== "client" && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl gap-1">
+            <DialogHeader className={'mb-2'}>
               <DialogTitle>Edit Task + Comments</DialogTitle>
             </DialogHeader>
 
@@ -483,6 +905,18 @@ function TodoItem({ todo, refreshTodos }) {
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder="Title"
+              />
+
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Description"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                    e.preventDefault();
+                    saveEdit();
+                  }
+                }}
               />
               {/* <Input
                 value={editPhone}
@@ -556,11 +990,6 @@ function TodoItem({ todo, refreshTodos }) {
 
               </div>
 
-              <Input
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Description"
-              />
             </div>
 
             {/* ✅ Priority Selection */}
@@ -603,13 +1032,14 @@ function TodoItem({ todo, refreshTodos }) {
                 </SelectContent>
               </Select>
             </div> */}
+
             {/* Comments inside Edit Dialog */}
-            <div className="mt-4">
+            <div className="mt-2">
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <MessageCircle size={16} /> Comments ({comments.length})
               </h4>
               <div
-                className={`space-y-3 mt-3 overflow-y-auto pr-2 
+                className={`space-y-3 mt-2 px-2 ${comments.length > 0 ? "border" : "border-none"} overflow-y-auto pr-2 
              scrollbar-thin scrollbar-thumb-gray-300 
              scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
              rounded-md ${comments.length > 0 ? "h-36" : "h-min"}`}
@@ -633,7 +1063,7 @@ function TodoItem({ todo, refreshTodos }) {
               </div>
 
 
-              <div className="mt-3 flex gap-2">
+              <div className="flex gap-1 mt-1">
                 <Input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
@@ -650,7 +1080,16 @@ function TodoItem({ todo, refreshTodos }) {
               </div>
             </div>
 
-            <DialogFooter className="flex gap-2 mt-4">
+            {/* 🧩 Subtasks Section */}
+            <Button
+              variant="outline"
+              onClick={() => setIsSubtaskOpen(true)}
+              className="flex gap-2 mt-2 cursor-pointer"
+            >
+              <ListTodo size={14} />
+              Show Subtasks
+            </Button>
+            <DialogFooter className="flex gap-2 mt-2">
               <Button
                 className="cursor-pointer"
                 onClick={saveEdit}
@@ -669,8 +1108,86 @@ function TodoItem({ todo, refreshTodos }) {
           </DialogContent>
         </Dialog>
       )}
+      {/* ✅ Separate Subtask Dialog */}
+      <Dialog open={isSubtaskOpen} onOpenChange={setIsSubtaskOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Subtasks for: {todo.title}</DialogTitle>
+          </DialogHeader>
 
-      {/* ✅ Comment Dialog for Client */}
+          <div className="flex gap-2 mb-2">
+            <Input
+              value={subtaskInput}
+              onChange={(e) => setSubtaskInput(e.target.value)}
+              placeholder="Add new subtask..."
+              className="text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                  e.preventDefault();
+                  handleAddSubtask();
+                }
+              }}
+            />
+            <Button size="sm" onClick={handleAddSubtask}>
+              Add
+            </Button>
+          </div>
+          {/* Subtask List */}
+          <div className="space-y-1 max-h-[300px] overflow-y-auto">
+            {todo.subtasks?.length > 0 ? (
+              todo.subtasks.map((sub) => (
+                <div
+                  key={sub.id}
+                  className="flex items-center justify-between bg-gray-50 rounded px-2 py-1"
+                >
+                  <div
+                    onClick={role !== "client" ? () => handleToggleSubtask(sub) : undefined}
+                    className={`flex items-center gap-2 ${role !== "client" ? "cursor-pointer hover:opacity-80" : "cursor-default"
+                      }`}
+                  >
+                    {sub.completed ? (
+                      <CheckSquare
+                        size={16}
+                        className={role === "client" ? "text-green-400" : "text-green-500"}
+                      />
+                    ) : (
+                      <Square
+                        size={16}
+                        className={role === "client" ? "text-gray-300" : "text-gray-400"}
+                      />
+                    )}
+                    <span
+                      className={`${sub.completed ? "line-through text-gray-400" : "text-gray-700"
+                        } text-sm`}
+                    >
+                      {sub.title}
+                    </span>
+                  </div>
+
+                  {role !== "client" && (
+                    <button
+                      onClick={() => handleDeleteSubtask(sub.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-gray-400 italic">
+                No subtasks added yet
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSubtaskOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ✅ Comment Dialog and subtask for Client */}
       {role === "client" && (
         <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
           <DialogContent className="max-w-2xl">
@@ -716,6 +1233,10 @@ function TodoItem({ todo, refreshTodos }) {
                 Add
               </Button>
             </div>
+
+            <Button onClick={() => setIsSubtaskOpen(true)} variant="outline" className="flex gap-2 mt-4 cursor-pointer">
+              <ListTodo /> Show subtasks
+            </Button>
           </DialogContent>
         </Dialog>
       )}

@@ -45,7 +45,7 @@ function UserDashboard() {
           const data = { id: userId, ...snapshot.data() };
           setUser(data);
 
-          // 🔥 Agar client hai aur linkedUserId hai → dev ka naam fetch karo
+          // Agar client hai aur linkedUserId hai → dev ka naam fetch karo
           if (data.role === "client" && data.linkedUserId) {
             const devRef = doc(db, "users", data.linkedUserId);
             const devSnap = await getDoc(devRef);
@@ -187,7 +187,7 @@ function UserDashboard() {
 
   const tabs = [
     { key: "todos", label: "Todo" },
-    { key: "in-process", label: "In Process" },
+    { key: "in-process", label: "In Progress" },
     { key: "done", label: "Done" },
     { key: "clients", label: "Clients" },
   ];
@@ -334,9 +334,9 @@ function UserDashboard() {
             .map((tab) => (
               <TabsContent key={tab.key} value={tab.key}>
                 <Card>
-                  <CardHeader>
+                  {/* <CardHeader>
                     <CardTitle>{tab.label}</CardTitle>
-                  </CardHeader>
+                  </CardHeader> */}
                   <CardContent>
                     <TodoList activeTab={tab.key} userId={userId} isAdmin />
                   </CardContent>
@@ -346,30 +346,30 @@ function UserDashboard() {
 
           {/* ✅ Clients Tab */}
           <TabsContent value="clients">
-            <Card>
+            <Card className="gap-2">
               <CardHeader>
-                <CardTitle>Clients</CardTitle>
+                <CardTitle className="text-xl">Client Requests</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="m-0">
                 {user?.clients?.length ? (
                   <ul className="space-y-4">
                     {user.clients.map((client, idx) => (
                       <li
                         key={idx}
-                        className="flex justify-between items-center border p-3 rounded-lg"
+                        className="flex justify-between items-center shadow-sm px-2 py-3 rounded-lg"
                       >
                         <div>
-                          <p className="font-bold">{client.name}</p>
-                          <p className="text-sm text-gray-600">{client.email}</p>
+                          <p className="font-semibold text-neutral-700">{client.name}</p>
+                          <p className="text-sm text-gray-600 mb-1">{client.email}</p>
                           <p className="text-xs">
-                            Status:{" "}
+                            {/* Status:{" "} */}
                             <span
                               className={
                                 client.status === "approved"
-                                  ? "text-green-600 bg-green-100 px-2 py-px rounded-2xl"
+                                  ? "text-green-700 bg-green-100 px-2 py-1 rounded-2xl font-semibold"
                                   : client.status === "rejected"
-                                    ? "text-red-600 bg-red-100 px-2 py-px rounded-2xl"
-                                    : "text-yellow-600 bg-yellow-100 px-2 py-px rounded-2xl"
+                                    ? "text-red-600 bg-red-100 px-2 rounded-2xl font-semibold py-1"
+                                    : "text-yellow-600 bg-yellow-100 px-2 rounded-2xl font-semibold py-1"
                               }
                             >
                               {client.status}
@@ -396,8 +396,9 @@ function UserDashboard() {
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
+
                                 size="sm"
-                                className="flex cursor-pointer items-center gap-1 text-red-600"
+                                className="flex cursor-pointer items-center gap-1 text-red-700"
                                 variant="outline"
                               >
                                 <Trash2 size={10} /> Remove
@@ -415,7 +416,6 @@ function UserDashboard() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  className="bg-red-600 text-white hover:bg-red-700"
                                   onClick={() => handleDelete(client)}
                                 >
                                   Yes, Reject

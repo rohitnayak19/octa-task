@@ -54,7 +54,7 @@ function Register() {
 
       if (role === "client") {
         if (!devCodeInput) {
-          setError("❌ Please enter a Developer Code.");
+          setError("Please enter a Manager Code.");
           return;
         }
 
@@ -63,7 +63,7 @@ function Register() {
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-          setError("❌ Invalid Developer Code!");
+          setError("Invalid Manager Code!");
           return;
         }
 
@@ -92,11 +92,11 @@ function Register() {
     } catch (err) {
       console.error(err);
       if (err.code === "auth/email-already-in-use") {
-        setError("❌ Email already in use.");
+        setError("Email already in use.");
       } else if (err.code === "auth/weak-password") {
-        setError("❌ Password should be at least 6 characters.");
+        setError("Password should be at least 6 characters.");
       } else {
-        setError("❌ Registration failed.");
+        setError("Registration failed.");
       }
     } finally{
       setLoading(false)

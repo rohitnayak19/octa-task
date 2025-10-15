@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, Search, UsersRound } from "lucide-react";
+import { LogOut, Search, UsersRound, Trash2, MoveRight } from "lucide-react";
 import { signOut } from "firebase/auth";
 import Logo from "../assets/OctaTech_Logo.webp";
 import {
@@ -14,6 +14,19 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+import toast from "react-hot-toast";
 
 function AdminPanel() {
   const [users, setUsers] = useState([]);
@@ -39,6 +52,23 @@ function AdminPanel() {
       navigate("/login");
     } catch (error) {
       console.error("❌ Logout failed:", error);
+    }
+  };
+
+  // ✅ Delete User Function
+  const handleDeleteUser = async (userId, userName) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${userName || "this user"}?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteDoc(doc(db, "users", userId));
+      setUsers((prev) => prev.filter((u) => u.id !== userId)); // UI update
+      toast.success("User deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete user.");
     }
   };
 
@@ -88,8 +118,8 @@ function AdminPanel() {
       <div className="p-6 max-w-8xl mx-auto">
         <Card className="shadow-sm border rounded-xl">
           <CardHeader className="flex flex-col gap-3">
-            <CardTitle className="text-lg flex gap-1 font-semibold text-gray-800">
-              <UsersRound size={20} /> Manage Users & Clients
+            <CardTitle className="text-lg flex items-center gap-1 font-semibold text-gray-800">
+              <UsersRound size={18} /> Manage - Managers & Clients
             </CardTitle>
 
             {/* 🔍 Search Input */}
@@ -108,7 +138,7 @@ function AdminPanel() {
           <CardContent>
             <Tabs defaultValue="users">
               <TabsList className="grid grid-cols-2 w-full mb-4">
-                <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="users">Managers</TabsTrigger>
                 <TabsTrigger value="clients">Clients</TabsTrigger>
               </TabsList>
 
@@ -126,12 +156,44 @@ function AdminPanel() {
                         </p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
-                      <Link
-                        to={`/admin/user/${user.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        View Dashboard →
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          to={`/admin/user/${user.id}`}
+                          className="text-xs flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          View Dashboard <MoveRight size={14} />
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700 cursor-pointer"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Manager</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete{" "}
+                                <span className="font-semibold text-gray-800">{user.name || "this user"}</span>?
+                                This action cannot be undone and will permanently remove their data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.id, user.name)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -156,12 +218,44 @@ function AdminPanel() {
                           Status: {client.status || "N/A"}
                         </p>
                       </div>
-                      <Link
-                        to={`/admin/user/${client.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        View Dashboard →
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          to={`/admin/user/${client.id}`}
+                          className="text-xs flex items-center gap-1  font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          View Dashboard <MoveRight size={14} />
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700 cursor-pointer"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete{" "}
+                                <span className="font-semibold text-gray-800">{client.name || "this user"}</span>?
+                                This action cannot be undone and will permanently remove their data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(client.id, client.name)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))
                 ) : (

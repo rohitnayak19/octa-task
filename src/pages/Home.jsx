@@ -72,7 +72,7 @@ function Home() {
 
   const tabs = [
     { key: "todos", label: "Todo" },
-    { key: "in-process", label: "In Process" },
+    { key: "in-process", label: "In Progress" },
     { key: "done", label: "Done" },
   ];
 
@@ -188,7 +188,7 @@ function Home() {
                       <DialogTrigger asChild>
                         <Button
                           variant="default"
-                          className="flex items-center cursor-pointer transition-all ease-in duration-300 gap-2 shadow-md hover:shadow-lg active:scale-105"
+                          className="flex items-center cursor-pointer hover:shadow-xl"
                         >
                           <Plus size={16} /> Add Task
                         </Button>
@@ -243,15 +243,15 @@ function Home() {
 
                   {/* 🔹 Clients Tab */}
                   <TabsContent value="clients">
-                    <Card>
+                    <Card className="gap-0">
                       <CardHeader>
-                        <CardTitle>Client Requests</CardTitle>
+                        <CardTitle className="text-[22px]">Client Requests</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {clients.length === 0 ? (
                           <p className="text-gray-500">No clients linked.</p>
                         ) : (
-                          <ul className="space-y-3">
+                          <ul className="space-y-1">
                             {clients.map((client) => (
                               <li
                                 key={client.id}
