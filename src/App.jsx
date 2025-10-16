@@ -21,8 +21,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword/>} />
-          <Route path="/reset-password" element={<ResetPassword/>} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           {/* Admin route */}
           <Route
             path="/admin"
@@ -77,11 +77,11 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route 
-          path="/admin/user/:userId/call-schedule" 
-          element={
-          <CallSchedule />
-          } 
+          <Route
+            path="/admin/user/:userId/call-schedule"
+            element={
+              <CallSchedule />
+            }
           />
 
         </Routes>
