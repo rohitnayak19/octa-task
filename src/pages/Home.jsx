@@ -252,83 +252,80 @@ function Home() {
                           <p className="text-gray-500">No clients linked.</p>
                         ) : (
                           <ul className="space-y-1">
-                            {clients.map((client) => (
-                              <li
-                                key={client.id}
-                                className="flex items-center justify-between p-4 rounded-md shadow hover:shadow-md transition"
-                              >
-                                <div>
-                                  <p className="font-medium">{client.name}</p>
-                                  <p className="text-sm text-gray-500">{client.email}</p>
-                                  <Badge
-                                    className={`mt-1 ${client.status === "approved"
-                                      ? "bg-green-100 text-green-700"
-                                      : client.status === "rejected"
-                                        ? "bg-red-100 text-red-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                      }`}
-                                  >
-                                    {client.status}
-                                  </Badge>
-                                </div>
-                                <div className="flex gap-2">
-                                  {client.status === "pending" && (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        className="flex items-center cursor-pointer gap-1 text-green-700"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleClientAction(client.id, "approved")
-                                        }
-                                      >
-                                        <Check size={14} /> Approve
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        className="flex cursor-pointer items-center gap-1"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleClientAction(client.id, "rejected")
-                                        }
-                                      >
-                                        <X size={14} stroke="orange" /> Reject
-                                      </Button>
-                                    </>
-                                  )}
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        className="flex items-center cursor-pointer gap-1 text-red-700"
-                                        variant="outline"
-                                      >
-                                        <Trash2 size={14} /> Remove
-                                      </Button>
-                                    </AlertDialogTrigger>
+                            {clients
+                              .filter((client, index, self) =>
+                                index === self.findIndex((c) => c.id === client.id)
+                              )
+                              .map((client) => (
+                                <li key={client.id} className="flex items-center justify-between p-4 rounded-md shadow hover:shadow-md transition">
+                                  <div>
+                                    <p className="font-medium">{client.name}</p>
+                                    <p className="text-sm text-gray-500">{client.email}</p>
+                                    <Badge
+                                      className={`mt-1 ${client.status === "approved"
+                                          ? "bg-green-100 text-green-700"
+                                          : client.status === "rejected"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-yellow-100 text-yellow-700"
+                                        }`}
+                                    >
+                                      {client.status}
+                                    </Badge>
+                                  </div>
 
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          This action cannot be undone. This will permanently reject the client request.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                        className="cursor-pointer"
-                                          onClick={() => handleClientAction(client.id, "delete")}
+                                  <div className="flex gap-2">
+                                    {client.status === "pending" && (
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          className="flex items-center cursor-pointer gap-1 text-green-700"
+                                          variant="outline"
+                                          onClick={() => handleClientAction(client.id, "approved")}
                                         >
-                                          Yes, Remove
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                              </li>
-                            ))}
+                                          <Check size={14} /> Approve
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="flex cursor-pointer items-center gap-1"
+                                          variant="outline"
+                                          onClick={() => handleClientAction(client.id, "rejected")}
+                                        >
+                                          <X size={14} stroke="orange" /> Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          className="flex items-center cursor-pointer gap-1 text-red-700"
+                                          variant="outline"
+                                        >
+                                          <Trash2 size={14} /> Remove
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently reject the client request.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="cursor-pointer"
+                                            onClick={() => handleClientAction(client.id, "delete")}
+                                          >
+                                            Yes, Remove
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </li>
+                              ))}
+
                           </ul>
                         )}
                       </CardContent>
