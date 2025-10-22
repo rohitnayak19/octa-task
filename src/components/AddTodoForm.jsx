@@ -332,7 +332,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
           {/* <div className="space-y-1">
             <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
               <SelectTrigger className="w-fit">
-                <SelectValue placeholder="Select current progress..." />
+                <SelectValue placeholder="Select current progress.." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="idea-stage">Idea stage / Planning</SelectItem>
