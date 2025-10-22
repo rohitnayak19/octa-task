@@ -398,7 +398,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
     <>
       <Card onClick={() => {
         if (!isAlertOpen) setIsDialogOpen(true), setIsCommentDialogOpen(true)
-      }} className={`relative px-1 ${role !== "client" ? "h-[160px]" : "h-[112px]"} py-2 overflow-hidden shadow-sm hover:shadow-md rounded-sm hover:scale-[1.01] transition-all duration-200 cursor-pointer`}>
+      }} className={`relative px-1 ${role !== "client" ? "h-[160px]" : "h-[129px] md:h-[112px]"} py-2 overflow-hidden shadow-sm hover:shadow-md rounded-sm hover:scale-[1.01] transition-all duration-200 cursor-pointer`}>
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
