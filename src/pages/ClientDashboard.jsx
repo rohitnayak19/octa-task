@@ -297,7 +297,7 @@ function ClientDashboard() {
           <div className="mb-6">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="flex items-center gap-2 cursor-pointer">
+                <Button className="flex items-center gap-2 cursor-pointer hover:shadow-2xl">
                   <Plus size={16} /> Add Task for Manager
                 </Button>
               </DialogTrigger>
