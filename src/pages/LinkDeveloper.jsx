@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useNavigate } from "react-router-dom";
+import Logo from "../assets/OctaTech_Logo.webp";
 
 function LinkDeveloper() {
   const { currentUser } = useAuth();
@@ -52,9 +53,16 @@ function LinkDeveloper() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="p-6 bg-white shadow rounded-md w-96">
-        <h2 className="text-xl font-bold mb-4">Link to Manager</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex justify-center mb-6">
+        <img
+          src={Logo}
+          alt="OctaTech Logo"
+          className="h-7 w-auto select-none"
+        />
+      </div>
+      <div className="p-6 bg-white shadow-xl rounded-2xl w-96 border border-gray-200">
+        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Link to Manager</h2>
         <Input
           type="text"
           placeholder="Enter Manager Code"

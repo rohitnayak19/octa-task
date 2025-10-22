@@ -88,9 +88,24 @@ function TodoItem({ todo, refreshTodos, userId }) {
   const [subtaskInput, setSubtaskInput] = useState("");
   const [isSubtaskOpen, setIsSubtaskOpen] = useState(false);
 
-  const clientCount = todo.assignedClients
-    ? todo.assignedClients.filter((id) => id !== todo.userId).length
-    : 0;
+  const clientCount = (() => {
+  if (!todo.assignedClients || !Array.isArray(todo.assignedClients)) return 0;
+
+  // Base count: all assigned clients except manager & creator
+  let count = todo.assignedClients.filter(
+    (id) => id !== todo.userId && id !== todo.createdBy
+  ).length;
+
+  // If creator is a client AND still part of assignedClients → count them
+  if (
+    todo.createdByRole === "client" &&
+    todo.assignedClients.includes(todo.createdBy)
+  ) {
+    count += 1;
+  }
+
+  return count;
+})();
 
   // ✅ Edit state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -655,10 +670,9 @@ function TodoItem({ todo, refreshTodos, userId }) {
                   {/* 👥 Client Count */}
                   {clientCount > 0 && (
                     <p className="text-xs text-gray-500 mb-1">
-                      {clientCount} {clientCount > 1 ? "s" : ""}
+                      {clientCount}
                     </p>
                   )}
-
                 </div>
                 {/* <Button
                   onClick={() => setIsDialogOpen(true)}
