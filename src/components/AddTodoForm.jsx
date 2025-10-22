@@ -48,7 +48,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, role } = useAuth();
 
   // ✅ set default time when component mounts
   useEffect(() => {
@@ -109,13 +109,14 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         title,
         // phone,
         description,
-        date: finalDate, // 👈 deadline
-        priority,        // 👈 new field
+        date: finalDate,
+        priority,
         status: category || "todos",
         userId: targetUserId,
         // statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
+        createdByRole: role,
         createdByName,
         assignedClients: assigned,
       });
@@ -136,7 +137,6 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       toast.error("Failed to add task. Try again!");
     }
   };
-
   // ✅ AI add
   const handleAddAi = async () => {
     if (!prompt.trim()) {
@@ -209,6 +209,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         // statusNote: parsed.statusNote,
         createdAt: serverTimestamp(),
         createdBy: currentUser.uid,
+        createdByRole: role,
         createdByName,
         assignedClients: selectedClients || [],
       });

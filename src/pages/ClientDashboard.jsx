@@ -173,7 +173,7 @@ function ClientDashboard() {
 
               <div className="flex gap-2 justify-center mt-4">
                 <Button
-                variant={'outline'}
+                  variant={'outline'}
                   onClick={() => navigate("/link-developer")}
                   className="group transition-all"
                 >
@@ -275,6 +275,14 @@ function ClientDashboard() {
             <LogOut size={16} />
             <span>Logout</span>
           </Button>
+          {/* <Button
+            onClick={() => navigate("/link-developer")}
+            variant="default"
+            size="sm"
+            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white"
+          >
+            <Plus size={16} /> Add Manager
+          </Button> */}
         </div>
       </nav>
       <div className="p-6 max-w-8xl mx-auto">
@@ -323,7 +331,7 @@ function ClientDashboard() {
                 </CardHeader> */}
                 <CardContent>
                   {developerData ? (
-                    <TodoList activeTab={tab.key} userId={developerData.id}  role="client"  />
+                    <TodoList activeTab={tab.key} userId={developerData.id} role="client" />
                   ) : (
                     <p className="text-gray-500">No Manager data found.</p>
                   )}
