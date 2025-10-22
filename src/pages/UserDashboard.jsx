@@ -304,8 +304,8 @@ function UserDashboard() {
         {/* ✅ Add Task Button + Dialog */}
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="my-2 cursor-pointer">
-              <Plus size={20} /> Add Task
+            <Button className="my-2 cursor-pointer transition-shadow hover:shadow-2xl">
+              <Plus size={20} /> Add Task for {user ? `${user.name || "Unnamed"}` : `(${userId})`}
             </Button>
           </DialogTrigger>
           <DialogContent>

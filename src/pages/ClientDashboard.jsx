@@ -256,7 +256,7 @@ function ClientDashboard() {
   return (
     <>
       <nav className="shadow-sm p-1">
-        <div className="flex justify-between items-center max-w-8xl mx-auto px-6 py-2">
+        <div className="flex flex-col md:flex-row md:justify-between items-start gap-3 md:gap-0 md:items-center max-w-8xl mx-auto px-6 py-2">
           <Link
             to="/"
             className="text-lg font-bold text-neutral-700 hover:text-neutral-800 transition-colors flex items-center gap-2"
@@ -297,7 +297,7 @@ function ClientDashboard() {
           <div className="mb-6">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="flex items-center gap-2 cursor-pointer">
+                <Button className="flex items-center gap-2 cursor-pointer hover:shadow-2xl">
                   <Plus size={16} /> Add Task for Manager
                 </Button>
               </DialogTrigger>
