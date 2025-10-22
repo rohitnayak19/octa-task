@@ -67,7 +67,7 @@ function Login() {
       // 🧩 Manager route
       if (userData.role === "user") {
         if (userData.adminStatus !== "approved") {
-          // toast.error("Your account is pending admin approval.");
+          toast.error("Your account is pending admin approval.");
           await signOut(auth);
           return;
         }

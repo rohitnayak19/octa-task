@@ -37,6 +37,9 @@ import {
   SelectValue
 } from "../components/ui/select";
 
+// 🧩 Import setter for auth listener control
+import { setSkipAuthListener } from "../context/AuthContext";
+
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,6 +50,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 🔹 Helper to generate manager code
   const generateDevCode = () =>
     "DEV-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -54,9 +58,14 @@ function Register() {
     setError("");
     setLoading(true);
 
+    // ⏸ Pause AuthContext temporarily
+    setSkipAuthListener(true);
+
     try {
+      // 1️⃣ Create Firebase Auth user
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
+      // 2️⃣ Prepare user data
       let userData = {
         uid: user.uid,
         name,
@@ -65,19 +74,22 @@ function Register() {
         createdAt: new Date(),
       };
 
-      // Manager
+      // 3️⃣ If Manager
       if (role === "user") {
         userData.devCode = generateDevCode();
         userData.clients = [];
         userData.status = "approved";
         userData.adminStatus = "pending";
+
+        await setDoc(doc(db, "users", user.uid), userData);
       }
 
-      // Client
+      // 4️⃣ If Client
       if (role === "client") {
         if (!devCodeInput.trim()) {
           setError("Please enter a Manager Code.");
           setLoading(false);
+          setSkipAuthListener(false);
           return;
         }
 
@@ -87,6 +99,7 @@ function Register() {
         if (snap.empty) {
           setError("Invalid Manager Code!");
           setLoading(false);
+          setSkipAuthListener(false);
           return;
         }
 
@@ -97,27 +110,41 @@ function Register() {
         userData.status = "pending";
         userData.adminStatus = "pending";
 
-        await updateDoc(doc(db, "users", devId), {
-          clients: arrayUnion({
-            id: user.uid,
-            name,
-            email,
-            status: "pending",
+        // Write both docs atomically
+        await Promise.all([
+          setDoc(doc(db, "users", user.uid), userData),
+          updateDoc(doc(db, "users", devId), {
+            clients: arrayUnion({
+              id: user.uid,
+              name,
+              email,
+              status: "pending",
+            }),
           }),
-        });
+        ]);
       }
 
-      await setDoc(doc(db, "users", user.uid), userData);
+      // ✅ Registration success
+      toast.success("Registration successful! Please wait for admin approval.");
 
-      // ✅ Signout first (prevents AuthContext loop)
-      await signOut(auth);
+      // Wait briefly to ensure Firestore finishes writes
+      await new Promise((res) => setTimeout(res, 1000));
 
-      toast.success("Registration successful! Wait for admin approval before login.");
+      // 🚪 Sign out cleanly
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn("SignOut warning:", err);
+      }
 
-      // ✅ Now navigate
+      // ✅ Resume Auth listener
+      setSkipAuthListener(false);
+
+      // Redirect to login
       navigate("/login", { replace: true });
     } catch (err) {
       console.error("Registration error:", err);
+
       if (err.code === "auth/email-already-in-use") {
         setError("Email already in use.");
       } else if (err.code === "auth/weak-password") {
@@ -125,6 +152,8 @@ function Register() {
       } else {
         setError("Registration failed. Try again.");
       }
+
+      setSkipAuthListener(false);
     } finally {
       setLoading(false);
     }
@@ -133,14 +162,14 @@ function Register() {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md shadow-xl rounded-2xl border border-gray-200 bg-white/90 backdrop-blur-sm transition-all duration-300 gap-3">
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-3">
           <img src={Logo} alt="OctaTech Logo" className="h-6 select-none" />
         </div>
 
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold">Get Started</CardTitle>
           <p className="text-center text-gray-500 text-sm">
-           Sign up for your OctaTech account
+            Sign up for your OctaTech account
           </p>
         </CardHeader>
 

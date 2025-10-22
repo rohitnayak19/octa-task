@@ -4,6 +4,17 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import toast from "react-hot-toast";
 
+// 🧩 Exported flag to control auth listener during registration
+// --- Auth listener control flag ---
+let skipAuthListener = false;
+
+export const setSkipAuthListener = (value) => {
+  skipAuthListener = value;
+};
+
+export const getSkipAuthListener = () => skipAuthListener;
+
+
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
@@ -25,12 +36,16 @@ export function AuthProvider({ children }) {
     mounted.current = true;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      // cleanup old listener
+      // 🚫 Skip listener during registration
+      if (getSkipAuthListener()) return;
+      
+      // cleanup old Firestore snapshot listener
       if (unsubUserRef.current) {
         unsubUserRef.current();
         unsubUserRef.current = null;
       }
 
+      // 🔸 No user logged in
       if (!user) {
         if (mounted.current) {
           setCurrentUser(null);
@@ -41,11 +56,13 @@ export function AuthProvider({ children }) {
       }
 
       try {
+        // Fetch user document
         const userRef = doc(db, "users", user.uid);
         const snap = await getDoc(userRef);
 
+        // If user doc doesn’t exist, sign them out
         if (!snap.exists()) {
-          await signOut(auth).catch(() => { });
+          await signOut(auth).catch(() => {});
           if (mounted.current) {
             setCurrentUser(null);
             setRole(null);
@@ -56,8 +73,7 @@ export function AuthProvider({ children }) {
 
         const data = snap.data();
 
-        // Reject unapproved admins
-        // Reject unapproved admins (corrected)
+        // ⛔ Prevent unapproved users from staying signed in
         if (data.adminStatus && data.adminStatus !== "approved") {
           setTimeout(async () => {
             try {
@@ -66,7 +82,6 @@ export function AuthProvider({ children }) {
               if (!isAbort(err)) console.error("Signout error:", err);
             }
             if (mounted.current) {
-              // toast.error("Your account is pending admin approval.");
               setCurrentUser(null);
               setRole(null);
               setLoading(false);
@@ -75,9 +90,7 @@ export function AuthProvider({ children }) {
           return;
         }
 
-
-
-        // Set user
+        // ✅ Set user info in context
         if (mounted.current) {
           setCurrentUser({
             uid: user.uid,
@@ -92,14 +105,16 @@ export function AuthProvider({ children }) {
           setLoading(false);
         }
 
-        // Real-time updates
+        // ✅ Real-time updates (watch user doc)
         unsubUserRef.current = onSnapshot(
           userRef,
           (liveSnap) => {
             if (!mounted.current || !liveSnap.exists()) return;
             const liveData = liveSnap.data();
+
+            // If admin sets back to pending → sign out user
             if (liveData.adminStatus && liveData.adminStatus !== "approved") {
-              signOut(auth).catch(() => { });
+              signOut(auth).catch(() => {});
               if (mounted.current) {
                 toast.error("Your account has been set to pending by admin.");
                 setCurrentUser(null);
