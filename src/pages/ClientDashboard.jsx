@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { db, auth } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, where, query, collection, onSnapshot } from "firebase/firestore";
 import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -26,6 +26,12 @@ function ClientDashboard() {
   const [developerData, setDeveloperData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [taskCounts, setTaskCounts] = useState({
+    todos: 0,
+    "in-process": 0,
+    done: 0,
+  });
+
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -68,6 +74,27 @@ function ClientDashboard() {
     };
 
     fetchData();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // client ke assigned tasks hi count karne hain
+    const q = query(
+      collection(db, "todos"),
+      where("assignedClients", "array-contains", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((d) => d.data());
+      const todos = data.filter((t) => t.status === "todos").length;
+      const inProcess = data.filter((t) => t.status === "in-process").length;
+      const done = data.filter((t) => t.status === "done").length;
+
+      setTaskCounts({ todos, "in-process": inProcess, done });
+    });
+
+    return () => unsubscribe();
   }, [currentUser]);
 
   const tabs = [
@@ -316,13 +343,25 @@ function ClientDashboard() {
         )}
 
         <Tabs defaultValue="todos">
-          <TabsList className="grid grid-cols-3 w-full mb-4">
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.key} value={tab.key}>
+          <TabsList className="grid grid-cols-3 w-full mb-2 rounded-lg">
+            {[
+              { key: "todos", label: "Todo" },
+              { key: "in-process", label: "In Progress" },
+              { key: "done", label: "Done" },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.key}
+                value={tab.key}
+                className="flex justify-center items-center gap-1"
+              >
                 {tab.label}
+                <span className="bg-gray-100 text-neutral-500 rounded-full text-xs">
+                  {taskCounts[tab.key] || 0}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>
+
           {tabs.map((tab) => (
             <TabsContent key={tab.key} value={tab.key}>
               <Card>

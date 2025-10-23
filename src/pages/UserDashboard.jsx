@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, writeBatch, arrayRemove, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, writeBatch, query, collection, where, onSnapshot, arrayRemove, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trash2, Plus, UsersRound, X, Check } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, UsersRound, X, Check, User } from "lucide-react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import {
@@ -34,7 +34,16 @@ function UserDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("todos");
-  const [developer, setDeveloper] = useState(null)
+  const [developer, setDeveloper] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [taskCounts, setTaskCounts] = useState({
+    todos: 0,
+    "in-process": 0,
+    done: 0,
+    clients: 0,
+  });
+
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -61,6 +70,29 @@ function UserDashboard() {
 
     fetchUser();
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // 🔹 Fetch all tasks for this user (manager)
+    const qBase = query(collection(db, "todos"), where("userId", "==", userId));
+
+    const unsubscribe = onSnapshot(qBase, (snapshot) => {
+      const data = snapshot.docs.map((doc) => doc.data());
+      const todos = data.filter((t) => t.status === "todos").length;
+      const inProcess = data.filter((t) => t.status === "in-process").length;
+      const done = data.filter((t) => t.status === "done").length;
+
+      setTaskCounts({
+        todos,
+        "in-process": inProcess,
+        done,
+        clients: user?.clients?.length || 0,
+      });
+    });
+
+    return () => unsubscribe();
+  }, [userId, user]);
 
   // ✅ Helper to update developer's client array safely
   const updateDeveloperClientStatus = async (developerId, clientId, status) => {
@@ -118,7 +150,6 @@ function UserDashboard() {
       toast.error("Approval failed");
     }
   };
-
 
   // ✅ Reject
   const handleReject = async (client) => {
@@ -184,6 +215,14 @@ function UserDashboard() {
     }
   };
 
+  const handleCopyDevCode = () => {
+    if (user?.devCode) {
+      navigator.clipboard.writeText(user.devCode);
+      toast.success("Manager Code copied!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
 
   const tabs = [
     { key: "todos", label: "Todo" },
@@ -278,24 +317,24 @@ function UserDashboard() {
           >
             <ArrowLeft size={16} /> Back
           </Button>
-          <h2 className="text-2xl font-bold flex gap-1 items-center">
-            <UsersRound /> User Dashboard {user ? `(${user.name || "Unnamed"})` : `(${userId})`}
+          <h2 className="text-2xl font-semibold flex gap-1 items-center text-gray-800">
+            {/* <User className="w-6 h-6" /> */}
+            <span className="text-gray-700">User Control Panel -</span>
+            <span className="text-gray-500 text-lg font-medium">
+              {user ? `${user.name || "Unnamed"}` : `(${userId})`}
+            </span>
           </h2>
-
           {user?.devCode && (
-            <div className="mt-2 flex items-center pl-2 py-px rounded-sm bg-gray-100 gap-2">
-              <span className="text-sm font-mono rounded">
-                Manager Code: {user.devCode}
-              </span>
+            <div className="flex items-center gap-3 border bg-white/80 px-2 py-1 rounded-lg hover:shadow-sm transition-all duration-200">
+              <span className="text-sm font-mono roundtext-sm font-medium text-gray-700">Manager Code:</span>{" "}
+              <span className="font-mono text-gray-800"> {user.devCode}</span>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  navigator.clipboard.writeText(user.devCode);
-                  toast.success("Developer Code copied!");
-                }}
+                onClick={handleCopyDevCode}
+                className="border-yellow-300 cursor-pointer hover:bg-yellow-100 active:scale-105 transition-all"
               >
-                Copy
+                {copied ? "Copied!" : "Copy"}
               </Button>
             </div>
           )}
@@ -322,8 +361,22 @@ function UserDashboard() {
         <Tabs defaultValue="todos" onValueChange={(val) => setActiveTab(val)}>
           <TabsList className="grid grid-cols-4 w-full mb-4">
             {tabs.map((tab) => (
-              <TabsTrigger key={tab.key} value={tab.key}>
+              <TabsTrigger
+                key={tab.key}
+                value={tab.key}
+                className="flex items-center justify-center gap-1 cursor-pointer"
+              >
                 {tab.label}
+                {tab.key !== "clients" && (
+                  <span className="bg-gray-100 text-neutral-500 rounded-full text-xs">
+                    {taskCounts[tab.key] || 0}
+                  </span>
+                )}
+                {tab.key === "clients" && (
+                  <span className="bg-gray-100 text-neutral-500 rounded-full text-xs">
+                    {taskCounts.clients || 0}
+                  </span>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -381,7 +434,7 @@ function UserDashboard() {
                           {client.status === "pending" && (
                             <>
                               <Button className={'cursor-pointer text-green-700'} variant={'outline'} size="sm" onClick={() => handleApprove(client)}>
-                                <Check stroke="green"/> Approve
+                                <Check stroke="green" /> Approve
                               </Button>
                               <Button
                                 className={'cursor-pointer'}
@@ -389,7 +442,7 @@ function UserDashboard() {
                                 variant="outline"
                                 onClick={() => handleReject(client)}
                               >
-                               <X stroke="orange"/> Reject
+                                <X stroke="orange" /> Reject
                               </Button>
                             </>
                           )}
