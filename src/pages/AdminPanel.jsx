@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { LogOut, Search, UsersRound, Trash2, MoveRight } from "lucide-react";
 import { signOut } from "firebase/auth";
 import Logo from "../assets/OctaTech_Logo.webp";
+import { useAuth } from "../context/AuthContext";
 import {
   Tabs,
   TabsList,
@@ -30,6 +31,7 @@ import toast from "react-hot-toast";
 function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
   // ✅ Fetch all users
@@ -109,7 +111,7 @@ function AdminPanel() {
           <Link to="/" className="flex items-center gap-2">
             <img src={Logo} alt="Octa_Tech_Logo" width={120} />
           </Link>
-          <h2 className="text-2xl font-bold text-neutral-600">Admin Panel</h2>
+          <h2 className="text-2xl font-bold text-neutral-600">{currentUser.name}</h2>
           <Button
             onClick={handleLogout}
             variant="outline"

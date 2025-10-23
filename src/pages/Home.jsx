@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { Plus, Check, X, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../firebase";
-import { doc, updateDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, getDoc, query, collection, where } from "firebase/firestore";
 
 // ✅ shadcn ui imports
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,13 @@ function Home() {
   const [copied, setCopied] = useState(false);
   // 🔹 Realtime clients state
   const [clients, setClients] = useState([]);
+  const [taskCounts, setTaskCounts] = useState({
+    todos: 0,
+    "in-process": 0,
+    done: 0,
+    clients: 0,
+  });
+
 
   // 🔹 Listen for realtime updates from Firestore
   useEffect(() => {
@@ -57,6 +64,38 @@ function Home() {
     });
     return () => unsubscribe();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let qBase;
+    if (role === "client") {
+      // Client ke liye apne assigned tasks hi count honge
+      qBase = query(
+        collection(db, "todos"),
+        where("assignedClients", "array-contains", currentUser.uid)
+      );
+    } else {
+      // Manager/Admin ke liye unke sabhi tasks
+      qBase = query(collection(db, "todos"), where("userId", "==", currentUser.uid));
+    }
+
+    const unsubscribe = onSnapshot(qBase, (snapshot) => {
+      const data = snapshot.docs.map((doc) => doc.data());
+      const todos = data.filter((t) => t.status === "todos").length;
+      const inProcess = data.filter((t) => t.status === "in-process").length;
+      const done = data.filter((t) => t.status === "done").length;
+
+      setTaskCounts({
+        todos,
+        "in-process": inProcess,
+        done,
+        clients: (data.clients?.length || clients?.length || 0),
+      });
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, role, clients]);
 
   const managerQuotes = [
     "Leadership is not about being in charge. It’s about taking care of those in your charge.",
@@ -215,14 +254,29 @@ function Home() {
                   <TabsList className="grid grid-cols-4 w-full mb-2 rounded-lg">
                     {tabs.map((tab) => (
                       <TabsTrigger
-                        className="p-0 text-sm cursor-pointer font-medium bg-gray-100"
+                        className="p-0 text-sm cursor-pointer font-medium bg-gray-100 flex justify-center items-center gap-1"
                         key={tab.key}
                         value={tab.key}
                       >
                         {tab.label}
+                        {tab.key !== "clients" && (
+                          <Badge
+                            className=" bg-gray-100 text-neutral-500 rounded-full text-xs"
+                          >
+                            {taskCounts[tab.key] || 0}
+                          </Badge>
+                        )}
+                        {tab.key === "clients" && (
+                          <Badge
+                            className="bg-gray-100 text-neutral-500 rounded-full text-xs"
+                          >
+                            {clients.length || 0}
+                          </Badge>
+                        )}
                       </TabsTrigger>
                     ))}
                   </TabsList>
+
 
                   {/* 🔹 Todos Tabs */}
                   {tabs
@@ -318,7 +372,7 @@ function Home() {
                                       <AlertDialogFooter>
                                         <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
                                         <AlertDialogAction
-                                        className="cursor-pointer"
+                                          className="cursor-pointer"
                                           onClick={() => handleClientAction(client.id, "delete")}
                                         >
                                           Yes, Remove
