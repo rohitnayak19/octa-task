@@ -52,7 +52,7 @@ function Register() {
 
   // 🔹 Helper to generate manager code
   const generateDevCode = () =>
-    "DEV-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    "MAN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const handleRegister = async () => {
     setError("");

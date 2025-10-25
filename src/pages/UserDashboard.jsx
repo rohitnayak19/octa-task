@@ -6,7 +6,7 @@ import TodoList from "../components/TodoList";
 import AddTodoForm from "../components/AddTodoForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trash2, Plus, UsersRound, X, Check, User } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, UsersRound, X, Check, CheckCheck, User, Copy } from "lucide-react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import {
@@ -313,13 +313,13 @@ function UserDashboard() {
             onClick={() => navigate(-1)}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 cursor-pointer"
           >
             <ArrowLeft size={16} /> Back
           </Button>
           <h2 className="text-2xl font-semibold flex gap-1 items-center text-gray-800">
             {/* <User className="w-6 h-6" /> */}
-            <span className="text-gray-700">User Control Panel -</span>
+            <span className="text-gray-700">Manager Dashboard -</span>
             <span className="text-gray-500 text-lg font-medium">
               {user ? `${user.name || "Unnamed"}` : `(${userId})`}
             </span>
@@ -332,9 +332,10 @@ function UserDashboard() {
                 size="sm"
                 variant="outline"
                 onClick={handleCopyDevCode}
-                className="border-yellow-300 cursor-pointer hover:bg-yellow-100 active:scale-105 transition-all"
+                className={`border-yellow-300 cursor-pointer hover:bg-yellow-100 hover:-translate-y-[1px] active:scale-90 ease-in transition-all duration-200 
+    ${copied ? "bg-green-100 border-green-400 text-green-700" : "text-gray-600"}`}
               >
-                {copied ? "Copied!" : "Copy"}
+                {copied ? <Check className="text-green-600" /> : <Copy/>}
               </Button>
             </div>
           )}

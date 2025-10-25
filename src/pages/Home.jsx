@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import AddTodoForm from "../components/AddTodoForm";
 import TodoList from "../components/TodoList";
 import { useAuth } from "../context/AuthContext";
-import { Plus, Check, X, Trash2 } from "lucide-react";
+import { Plus, Check, X, Trash2, Copy } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../firebase";
 import { doc, updateDoc, onSnapshot, getDoc, query, collection, where } from "firebase/firestore";
@@ -110,7 +110,7 @@ function Home() {
 
 
   const tabs = [
-    { key: "todos", label: "Todo" },
+    { key: "todos", label: "To-do" },
     { key: "in-process", label: "In Progress" },
     { key: "done", label: "Done" },
   ];
@@ -207,14 +207,14 @@ function Home() {
                     <span className="font-mono text-gray-800">{currentUser.devCode}</span>
                   </span>
                   <Button
-                    onClick={handleCopyDevCode}
                     size="sm"
                     variant="outline"
-                    className="border-yellow-300 cursor-pointer hover:bg-yellow-100 active:scale-105 transition-all"
+                    onClick={handleCopyDevCode}
+                    className={`border-yellow-300 cursor-pointer hover:bg-yellow-100 hover:-translate-y-[1px] active:scale-75 ease-in transition-all duration-200 
+    ${copied ? "bg-green-100 border-green-400 text-green-700" : "text-gray-600"}`}
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? <Check className="text-green-600" /> : <Copy />}
                   </Button>
-
                 </div>
               )}
             </div>

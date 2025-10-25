@@ -398,7 +398,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
     <>
       <Card onClick={() => {
         if (!isAlertOpen) setIsDialogOpen(true), setIsCommentDialogOpen(true)
-      }} className={`relative px-1 ${role !== "client" ? "h-[160px]" : "h-[129px] md:h-[112px]"} py-2 overflow-hidden shadow-sm hover:shadow-md rounded-sm hover:scale-[1.01] transition-all duration-200 cursor-pointer`}>
+      }} className={`relative px-1 ${role !== "client" ? "min-h-[160px]" : "h-[129px] md:h-[112px]"} py-2 overflow-hidden shadow-sm hover:shadow-md rounded-sm hover:scale-[1.01] transition-all duration-200 cursor-pointer`}>
         {/* Zigzag Background Pattern */}
         <div
           className="absolute inset-0 z-0 pointer-events-none opacity-40"
@@ -515,9 +515,9 @@ function TodoItem({ todo, refreshTodos, userId }) {
             {renderDeadlineBadge(todo.date)}
             {renderPriorityBadge(todo.priority)}
             {/* Actual Date */}
-            <div className="flex items-center gap-px shadow px-1 py-px rounded-2xl text-xs">
+            <div className="flex items-center gap-px shadow p-1 rounded-2xl text-xs">
               <Clock size={16} className="text-gray-500" />
-              <span className="font-medium text-sm text-neutral-700">
+              <span className="font-medium text-xs text-neutral-700">
                 {formatDate(todo.date)?.toLocaleString("en-IN", {
                   weekday: "short",
                   month: "short",
@@ -906,7 +906,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Edit Dialog for Developer */}
+      {/* ✅ Edit Dialog for Manager */}
       {role !== "client" && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl gap-1">
@@ -939,7 +939,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
               /> */}
 
               {/* ✅ Shadcn Date + Time Picker */}
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-2">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -977,7 +977,23 @@ function TodoItem({ todo, refreshTodos, userId }) {
                     />
                   </PopoverContent>
                 </Popover>
-
+                 {/* ✅ Priority Selection */}
+            <div>
+              {/* <label className="text-sm font-medium text-gray-700">Priority</label> */}
+              <Select
+                value={priority}
+                onValueChange={(val) => setPriority(val)}
+              >
+                <SelectTrigger className="w-fit">
+                  <SelectValue placeholder="Choose priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
                 {/* <Input
                   type="time"
                   value={
@@ -1003,27 +1019,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
                 /> */}
 
               </div>
-
             </div>
-
-            {/* ✅ Priority Selection */}
-            <div>
-              {/* <label className="text-sm font-medium text-gray-700">Priority</label> */}
-              <Select
-                value={priority}
-                onValueChange={(val) => setPriority(val)}
-              >
-                <SelectTrigger className="mt-1 w-fit">
-                  <SelectValue placeholder="Choose priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* StausNote */}
             {/* <div className="space-y-1">
               <Select onValueChange={(val) => setStatusNote(val)} value={statusNote}>
@@ -1048,7 +1044,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
             </div> */}
 
             {/* Comments inside Edit Dialog */}
-            <div className="mt-2">
+            <div className="mt-4">
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <MessageCircle size={16} /> Comments ({comments.length})
               </h4>
@@ -1093,7 +1089,6 @@ function TodoItem({ todo, refreshTodos, userId }) {
                 </Button>
               </div>
             </div>
-
             {/* 🧩 Subtasks Section */}
             <Button
               variant="outline"
@@ -1101,7 +1096,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
               className="flex gap-2 mt-2 cursor-pointer"
             >
               <ListTodo size={14} />
-              Show Subtasks
+              {`Subtasks (${todo.subtasks ? todo.subtasks.length : 0})`}
             </Button>
             <DialogFooter className="flex gap-2 mt-2">
               <Button
@@ -1249,7 +1244,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
             </div>
 
             <Button onClick={() => setIsSubtaskOpen(true)} variant="outline" className="flex gap-2 mt-4 cursor-pointer">
-              <ListTodo /> Show subtasks
+              <ListTodo /> {`Subtasks (${todo.subtasks ? todo.subtasks.length : 0})`}
             </Button>
           </DialogContent>
         </Dialog>

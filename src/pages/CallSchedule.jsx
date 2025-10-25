@@ -153,7 +153,7 @@ function CallSchedule() {
                 toast.success("Lead updated");
             } else {
                 await addDoc(collection(db, "calls"), {
-                    userId: currentUser.uid,
+                    userId: role === "admin" && userId ? userId : currentUser.uid,
                     campaign,
                     businessType,
                     ownerName,
@@ -164,6 +164,7 @@ function CallSchedule() {
                     date,
                     createdAt: new Date(),
                 });
+
                 toast.success("Lead added");
             }
             resetForm();
@@ -341,7 +342,7 @@ function CallSchedule() {
 
                         <Dialog open={open} onOpenChange={setOpen}>
                             <DialogTrigger asChild>
-                                <Button className="flex items-center gap-2 cursor-pointer">
+                                <Button onClick={() => resetForm()} className="flex items-center gap-2 cursor-pointer">
                                     <Plus size={16} /> Add Lead
                                 </Button>
                             </DialogTrigger>
@@ -411,7 +412,6 @@ function CallSchedule() {
                                             <SelectItem value="Courier & Delivery Service">Courier & Delivery Service</SelectItem>
                                             <SelectItem value="Bike / Car Rental">Bike / Car Rental</SelectItem>
                                             <SelectItem value="Shared Mobility">Shared Mobility</SelectItem>
-
                                             <SelectItem value="other">Other (Add New)</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -559,7 +559,35 @@ function CallSchedule() {
                                                     ? format(new Date(c.serviceFollowUpDate.seconds * 1000), "PPP")
                                                     : "-"}
                                             </TableCell>
-                                            <TableCell>{c.sourceOfLead}</TableCell>
+                                            <TableCell>
+                                                {c.sourceOfLead ? (
+                                                    c.sourceOfLead.match(/(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,})/i) ? (
+                                                        <a
+                                                            href={
+                                                                c.sourceOfLead.startsWith("http")
+                                                                    ? c.sourceOfLead
+                                                                    : `https://${c.sourceOfLead.replace(/^\/+/, "")}`
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm hover:bg-blue-100 transition"
+                                                        >
+                                                            {c.sourceOfLead.includes("instagram")
+                                                                ? "Instagram"
+                                                                : c.sourceOfLead.includes("facebook")
+                                                                    ? "Facebook"
+                                                                    : c.sourceOfLead.includes("youtube")
+                                                                        ? "YouTube"
+                                                                        : "Source"}
+                                                        </a>
+                                                    ) : (
+                                                        c.sourceOfLead
+                                                    )
+                                                ) : (
+                                                    "-"
+                                                )}
+                                            </TableCell>
+
                                             <TableCell>
                                                 {c.date?.seconds
                                                     ? format(new Date(c.date.seconds * 1000), "PPP")
@@ -631,12 +659,13 @@ function CallSchedule() {
                                     <PaginationItem>
                                         <PaginationPrevious
                                             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                         />
                                     </PaginationItem>
                                     {Array.from({ length: totalPages }, (_, i) => (
                                         <PaginationItem key={i}>
                                             <PaginationLink
+                                                className={"cursor-pointer"}
                                                 onClick={() => setCurrentPage(i + 1)}
                                                 isActive={currentPage === i + 1}
                                             >
@@ -647,7 +676,7 @@ function CallSchedule() {
                                     <PaginationItem>
                                         <PaginationNext
                                             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                         />
                                     </PaginationItem>
                                 </PaginationContent>

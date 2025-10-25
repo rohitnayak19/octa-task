@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { doc, deleteDoc, collection, getDocs, updateDoc } from "firebase/firestore";
+import { doc, deleteDoc, collection, getDocs, updateDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,9 @@ import toast from "react-hot-toast";
 function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [managers, setManagers] = useState([]);
+  const [clients, setClients] = useState([]);
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -46,6 +49,23 @@ function AdminPanel() {
     };
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+  const unsubManagers = onSnapshot(
+    query(collection(db, "users"), where("role", "==", "user")),
+    (snap) => setManagers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  );
+
+  const unsubClients = onSnapshot(
+    query(collection(db, "users"), where("role", "==", "client")),
+    (snap) => setClients(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  );
+
+  return () => {
+    unsubManagers();
+    unsubClients();
+  };
+}, []);
 
   // ✅ Logout Function
   const handleLogout = async () => {
@@ -111,7 +131,7 @@ function AdminPanel() {
           <Link to="/" className="flex items-center gap-2">
             <img src={Logo} alt="Octa_Tech_Logo" width={120} />
           </Link>
-          <h2 className="text-2xl font-bold text-neutral-600">{currentUser.name}</h2>
+          <h2 className="text-2xl font-bold text-neutral-600">Admin - panel</h2>
           <Button
             onClick={handleLogout}
             variant="outline"
@@ -148,10 +168,29 @@ function AdminPanel() {
           <CardContent>
             <Tabs defaultValue="users">
               <TabsList className="grid grid-cols-2 w-full mb-4">
-                <TabsTrigger value="users">Managers</TabsTrigger>
-                <TabsTrigger value="clients">Clients</TabsTrigger>
+                <TabsTrigger
+                  value="users"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Managers
+                  {managers?.length > 0 && (
+                    <span className="text-xs font-medium px-2 py-[1px] rounded-full">
+                      {managers.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="clients"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Clients
+                  {clients?.length > 0 && (
+                    <span className="text-xs font-medium px-2 py-[1px] rounded-full">
+                      {clients.length}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
-
               {/* 🔹 Managers Tab */}
               <TabsContent value="users">
                 {onlyUsers.length > 0 ? (
@@ -164,11 +203,10 @@ function AdminPanel() {
                         <p className="font-medium text-gray-800">{user.name || "Unnamed"}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                         <p
-                          className={`text-xs mt-1 font-medium ${
-                            user.adminStatus === "approved"
-                              ? "text-green-600"
-                              : "text-yellow-600"
-                          }`}
+                          className={`text-xs mt-1 font-medium ${user.adminStatus === "approved"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                            }`}
                         >
                           Admin Status: {user.adminStatus || "pending"}
                         </p>
@@ -178,11 +216,10 @@ function AdminPanel() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className={`cursor-pointer ${
-                            user.adminStatus === "approved"
-                              ? "text-yellow-600 border-yellow-400"
-                              : "text-green-600 border-green-400"
-                          }`}
+                          className={`cursor-pointer ${user.adminStatus === "approved"
+                            ? "text-yellow-600 border-yellow-400"
+                            : "text-green-600 border-green-400"
+                            }`}
                           onClick={() => handleToggleApproval(user.id, user.adminStatus)}
                         >
                           {user.adminStatus === "approved" ? "Set Pending" : "Approve"}
@@ -206,7 +243,7 @@ function AdminPanel() {
                               <AlertDialogTitle>Delete Manager</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to delete{" "}
-                                <span className="font-semibold text-gray-800">{user.name}</span>? 
+                                <span className="font-semibold text-gray-800">{user.name}</span>?
                                 This cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -239,11 +276,10 @@ function AdminPanel() {
                         <p className="text-sm text-gray-500">{client.email}</p>
                         <p className="text-xs text-gray-400">Manager Status: {client.status || "N/A"}</p>
                         <p
-                          className={`text-xs mt-1 font-medium ${
-                            client.adminStatus === "approved"
-                              ? "text-green-600"
-                              : "text-yellow-600"
-                          }`}
+                          className={`text-xs mt-1 font-medium ${client.adminStatus === "approved"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                            }`}
                         >
                           Admin Status: {client.adminStatus || "pending"}
                         </p>
@@ -253,11 +289,10 @@ function AdminPanel() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className={`cursor-pointer ${
-                            client.adminStatus === "approved"
-                              ? "text-yellow-600 border-yellow-400"
-                              : "text-green-600 border-green-400"
-                          }`}
+                          className={`cursor-pointer ${client.adminStatus === "approved"
+                            ? "text-yellow-600 border-yellow-400"
+                            : "text-green-600 border-green-400"
+                            }`}
                           onClick={() => handleToggleApproval(client.id, client.adminStatus)}
                         >
                           {client.adminStatus === "approved" ? "Set Pending" : "Approve"}
@@ -274,7 +309,7 @@ function AdminPanel() {
                               <AlertDialogTitle>Delete Client</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to delete{" "}
-                                <span className="font-semibold text-gray-800">{client.name}</span>? 
+                                <span className="font-semibold text-gray-800">{client.name}</span>?
                                 This cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>

@@ -178,28 +178,28 @@ function TodoList({ activeTab, role, userId }) {
             <SelectContent>
               <SelectItem value="all">All Tasks</SelectItem>
               <SelectItem value="today">
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-px justify-between w-full">
                   Today
                   {todayCount > 0 && (
-                    <Badge className="bg-blue-600 text-white text-xs">{todayCount}</Badge>
+                    <Badge className="bg-blue-500 text-white px-1 py-px">{todayCount}</Badge>
                   )}
                 </div>
               </SelectItem>
               <SelectItem value="tomorrow">
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-px justify-between w-full">
                   Tomorrow
                   {tomorrowCount > 0 && (
-                    <Badge className="bg-yellow-500 text-white text-xs">
+                    <Badge className="bg-yellow-500 text-white px-1 py-px">
                       {tomorrowCount}
                     </Badge>
                   )}
                 </div>
               </SelectItem>
               <SelectItem value="overdue">
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-px justify-between w-full">
                   Overdue
                   {overdueCount > 0 && (
-                    <Badge className="bg-red-600 text-white text-xs">{overdueCount}</Badge>
+                    <Badge className="bg-red-600 text-white px-1 py-px">{overdueCount}</Badge>
                   )}
                 </div>
               </SelectItem>
