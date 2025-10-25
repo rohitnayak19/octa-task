@@ -225,7 +225,7 @@ function UserDashboard() {
   };
 
   const tabs = [
-    { key: "todos", label: "Todo" },
+    { key: "todos", label: "To-do" },
     { key: "in-process", label: "In Progress" },
     { key: "done", label: "Done" },
     { key: "clients", label: "Clients" },
