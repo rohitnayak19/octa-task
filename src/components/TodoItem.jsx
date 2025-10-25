@@ -89,23 +89,23 @@ function TodoItem({ todo, refreshTodos, userId }) {
   const [isSubtaskOpen, setIsSubtaskOpen] = useState(false);
 
   const clientCount = (() => {
-  if (!todo.assignedClients || !Array.isArray(todo.assignedClients)) return 0;
+    if (!todo.assignedClients || !Array.isArray(todo.assignedClients)) return 0;
 
-  // Base count: all assigned clients except manager & creator
-  let count = todo.assignedClients.filter(
-    (id) => id !== todo.userId && id !== todo.createdBy
-  ).length;
+    // Base count: all assigned clients except manager & creator
+    let count = todo.assignedClients.filter(
+      (id) => id !== todo.userId && id !== todo.createdBy
+    ).length;
 
-  // If creator is a client AND still part of assignedClients → count them
-  if (
-    todo.createdByRole === "client" &&
-    todo.assignedClients.includes(todo.createdBy)
-  ) {
-    count += 1;
-  }
+    // If creator is a client AND still part of assignedClients → count them
+    if (
+      todo.createdByRole === "client" &&
+      todo.assignedClients.includes(todo.createdBy)
+    ) {
+      count += 1;
+    }
 
-  return count;
-})();
+    return count;
+  })();
 
   // ✅ Edit state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -977,23 +977,23 @@ function TodoItem({ todo, refreshTodos, userId }) {
                     />
                   </PopoverContent>
                 </Popover>
-                 {/* ✅ Priority Selection */}
-            <div>
-              {/* <label className="text-sm font-medium text-gray-700">Priority</label> */}
-              <Select
-                value={priority}
-                onValueChange={(val) => setPriority(val)}
-              >
-                <SelectTrigger className="w-fit">
-                  <SelectValue placeholder="Choose priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                {/* ✅ Priority Selection */}
+                <div>
+                  {/* <label className="text-sm font-medium text-gray-700">Priority</label> */}
+                  <Select
+                    value={priority}
+                    onValueChange={(val) => setPriority(val)}
+                  >
+                    <SelectTrigger className="w-fit">
+                      <SelectValue placeholder="Choose priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {/* <Input
                   type="time"
                   value={
@@ -1048,42 +1048,58 @@ function TodoItem({ todo, refreshTodos, userId }) {
               <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <MessageCircle size={16} /> Comments ({comments.length})
               </h4>
+
+              {/* ✅ Scrollable Comment List */}
               <div
-                className={`space-y-3 mt-2 px-2 ${comments.length > 0 ? "border" : "border-none"} overflow-y-auto pr-2 
-             scrollbar-thin scrollbar-thumb-gray-300 
-             scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
-             rounded-md ${comments.length > 0 ? "h-36" : "h-min"}`}
+                className={`space-y-3 mt-2 px-2 ${comments.length > 0 ? "border" : "border-none"
+                  } overflow-y-auto pr-2 
+    scrollbar-thin scrollbar-thumb-gray-300 
+    scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
+    rounded-md transition-all duration-200 ${comments.length > 0 ? "h-36" : "h-min"
+                  }`}
               >
-                {comments.map((c) => (
-                  <div
-                    key={c.id}
-                    className={`max-w-[75%] px-3 py-1 rounded-lg shadow text-sm mb-2 
-        ${c.userId === auth.currentUser.uid
-                        ? "ml-auto bg-blue-100 text-blue-800 text-right"
-                        : "mr-auto bg-gray-100 text-gray-800 text-left"
-                      }`}
-                  >
-                    <p className="font-medium">{c.userName}</p>
-                    <p>{c.text}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {c.createdAt?.toDate().toLocaleString()}
-                    </p>
-                  </div>
-                ))}
+                {comments.map((c) => {
+                  const isMyComment = c.userId === auth.currentUser?.uid;
+                  return (
+                    <div
+                      key={c.id}
+                      className={`flex flex-col ${isMyComment ? "items-end" : "items-start"
+                        }`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-2xl shadow-sm text-sm ${isMyComment
+                            ? "bg-blue-100 text-blue-800 text-right"
+                            : "bg-gray-100 text-gray-800 text-left"
+                          }`}
+                      >
+                        <p className="font-semibold">{c.userName}</p>
+                        <p>{c.text}</p>
+                      </div>
+                      <p
+                        className={`text-xs text-gray-500 mt-1 ${isMyComment ? "text-right" : "text-left"
+                          }`}
+                      >
+                        {c.createdAt?.toDate().toLocaleString()}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
 
-
-              <div className="flex gap-1 mt-1">
+              {/* ✅ Comment Input Section (Admin + Everyone) */}
+              <div className="flex gap-2 mt-2 items-center">
                 <Input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
+                  className="flex-1"
                 />
                 <Button
                   onClick={handleAddComment}
                   variant="secondary"
                   size="sm"
                   disabled={!newComment.trim()}
+                  className="cursor-pointer"
                 >
                   Add
                 </Button>

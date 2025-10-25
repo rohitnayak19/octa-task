@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 // ✅ Gemini
 import { GoogleGenerativeAI } from "@google/generative-ai";
-const genAI = new GoogleGenerativeAI("AIzaSyBv4ROjB0SWATqn4xuTP2FGT1wewGCERXw");
+const genAI = new GoogleGenerativeAI("AIzaSyB-RA1H0NVkoD-iJXadVCgS8HLsweKy5zo");
 
 function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
   const [mode, setMode] = useState("manual");
