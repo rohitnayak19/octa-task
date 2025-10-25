@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { Link } from "lucide-react";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -63,8 +64,15 @@ const ForgotPassword = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Sending..." : "Send Reset Link"}
+            <Button type="submit" disabled={loading} className="w-full bg-[#f7e347] hover:bg-[#e3ce30] cursor-pointer text-lg">
+              {loading ? (
+                <>Sending... <Link className="inline-block w-4 h-4 animate-spin" /></>
+              ) : (
+                <>
+                  Send Reset Link <Link className="inline-block w-4 h-4" />
+                </>
+              )}
+
             </Button>
           </form>
         </CardContent>
