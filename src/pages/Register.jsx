@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import {Eye, EyeOff} from "lucide-react"
 
 import Logo from "../assets/OctaTech_Logo.webp";
 import {
@@ -48,6 +49,7 @@ function Register() {
   const [devCodeInput, setDevCodeInput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setshowPassword] = useState(false);
   const navigate = useNavigate();
 
   // 🔹 Helper to generate manager code
@@ -196,14 +198,21 @@ function Register() {
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 relative">
             <Label>Password</Label>
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button  
+            type="button" 
+            onClick={() => setshowPassword(!showPassword)}
+            className="absolute top-3 cursor-pointer inset-y-0 right-3 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
 
           <div className="space-y-1">

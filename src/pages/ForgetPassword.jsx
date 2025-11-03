@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { Link } from "lucide-react";
-
+import Logo from "../assets/OctaTech_Logo.webp";
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ const ForgotPassword = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
-          <CardTitle>Forgot Password</CardTitle>
+          <CardTitle className="flex items-center justify-between"><span>Forgot Password</span> <img src={Logo} alt="OctaTech_Logo" width={80} /></CardTitle>
           <CardDescription>
             Enter your registered email to receive a password reset link.
           </CardDescription>

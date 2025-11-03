@@ -99,7 +99,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
     } else {
       finalDate = new Date();
     }
-    
+
     try {
       // ✅ Make sure the creator (client) can also see the task
       const assigned = Array.from(
@@ -197,6 +197,10 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
       } catch (err) {
         console.warn("Could not fetch user name:", err);
       }
+      // ✅ Include current client so both sides can see it
+      const assigned = Array.from(
+        new Set([...(selectedClients || []), currentUser.uid])
+      );
 
       await addDoc(collection(db, "todos"), {
         title: parsed.title,
@@ -211,7 +215,7 @@ function AddTodoForm({ defaultCategory, onTaskAdded, overrideUserId }) {
         createdBy: currentUser.uid,
         createdByRole: role,
         createdByName,
-        assignedClients: selectedClients || [],
+        assignedClients: assigned
       });
 
       setPrompt("");

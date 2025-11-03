@@ -5,6 +5,7 @@ import App from './App.jsx'
 
 // ✅ Import Vite PWA service worker register
 import { registerSW } from 'virtual:pwa-register'
+import { Button } from './components/ui/button.jsx'
 
 // Automatically register and update service worker
 registerSW({

@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://octa-task-rho.vercel.app/

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 import {
   doc,
   getDoc,
@@ -35,6 +36,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [askDevCode, setAskDevCode] = useState(false);
+  const [showPassword, setshowPassword] = useState(false);
   const navigate = useNavigate();
   const { currentUser, role } = useAuth();
 
@@ -200,13 +202,20 @@ function Login() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <Label>Password</Label>
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
+                <button  
+                onClick={() => setshowPassword(!showPassword)}
+                className="absolute top-3 cursor-pointer inset-y-0 right-3 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </>
           ) : (

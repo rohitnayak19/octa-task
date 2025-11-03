@@ -1,38 +1,69 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- ✅ App Title & Description -->
   <title>OctaTech Task</title>
-  <meta name="description" content="A modern task management system built by OctaTech using React, Firebase & Tailwind." />
+  <meta
+    name="description"
+    content="A modern task management system built by OctaTech using React, Firebase & Tailwind."
+  />
 
-  <!-- ✅ Favicon (browser tab + fallback) -->
+  <!-- ✅ Favicons -->
   <link rel="icon" type="image/x-icon" href="/OctaIcon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192x192.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-192x192.png" />
-
-  <!-- ✅ App Icons (for PWA install & Apple devices) -->
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-512x512.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
-  <!-- ✅ Theme color for mobile browsers -->
+  <!-- ✅ Theme color (browser + PWA) -->
   <meta name="theme-color" content="#0f172a" />
 
-  <!-- ✅ Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- ✅ Preconnect & Preload Fonts (non-blocking) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-    rel="stylesheet">
+    rel="preload"
+    as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </noscript>
+
+  <!-- ✅ Performance Hint: Reduce render-blocking -->
+  <link rel="preload" as="image" href="/icons/icon-192x192.png" />
+
+  <!-- ✅ SEO & Accessibility -->
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="OctaTech" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- ✅ Security -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 </head>
 
 <body>
+  <noscript>
+    <p style="color:#444; text-align:center; margin-top:20px;">
+      Please enable JavaScript to use OctaTech Task Manager.
+    </p>
+  </noscript>
+
   <div id="root"></div>
+
   <!-- ✅ Main React Entry -->
   <script type="module" src="/src/main.jsx"></script>
 </body>
-
 </html>
