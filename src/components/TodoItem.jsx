@@ -1055,7 +1055,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
                   } overflow-y-auto pr-2 
     scrollbar-thin scrollbar-thumb-gray-300 
     scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
-    rounded-md transition-all duration-200 ${comments.length > 0 ? "h-32" : "h-min"
+    rounded-md transition-all duration-200 ${comments.length > 0 ? "h-20" : "h-min"
                   }`}
               >
                 {comments.map((c) => {
@@ -1130,7 +1130,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
               </Button>
             </div>
             {/* Subtask List */}
-            <div className="max-h-[70px] overflow-y-auto space-y-2 pr-2">
+            <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2">
               {todo.subtasks?.length > 0 ? (
                 todo.subtasks.map((sub) => (
                   <div

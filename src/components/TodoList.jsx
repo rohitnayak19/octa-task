@@ -240,11 +240,25 @@ function TodoList({ activeTab, role, userId }) {
       </Dialog>
 
       {/* ✅ Show tasks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 col-gap-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {filteredTodos.length > 0 ? (
-          filteredTodos.map((todo) => (
-            <TodoItem key={todo.id} todo={todo} role={role} userId={userId}  currentUser={auth.currentUser}  refreshTodos={() => { }} />
-          ))
+          [...filteredTodos]
+            .sort((a, b) => {
+              // handle missing timestamps safely
+              const timeA = a.createdAt?.seconds || 0
+              const timeB = b.createdAt?.seconds || 0
+              return timeA - timeB // ascending (old first)
+            })
+            .map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                role={role}
+                userId={userId}
+                currentUser={auth.currentUser}
+                refreshTodos={() => { }}
+              />
+            ))
         ) : (
           <div className="col-span-full text-center py-10 bg-gray-50 border rounded-lg">
             <p className="text-gray-500 text-lg">
@@ -257,6 +271,7 @@ function TodoList({ activeTab, role, userId }) {
           </div>
         )}
       </div>
+
     </div>
   );
 }
