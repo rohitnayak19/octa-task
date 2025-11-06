@@ -1177,7 +1177,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
             >
               <ListTodo size={14} />
               {`Subtasks (${todo.subtasks ? todo.subtasks.length : 0})`}
-            </Button>
+            </Button> */}
             <DialogFooter className="flex gap-2 mt-2">
               <Button
                 className="cursor-pointer"
@@ -1193,7 +1193,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
               >
                 <X /> Cancel
               </Button>
-            </DialogFooter> */}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
