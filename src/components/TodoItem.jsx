@@ -1055,7 +1055,7 @@ function TodoItem({ todo, refreshTodos, userId }) {
                   } overflow-y-auto pr-2 
     scrollbar-thin scrollbar-thumb-gray-300 
     scrollbar-track-transparent hover:scrollbar-thumb-gray-400 
-    rounded-md transition-all duration-200 ${comments.length > 0 ? "h-36" : "h-min"
+    rounded-md transition-all duration-200 ${comments.length > 0 ? "h-32" : "h-min"
                   }`}
               >
                 {comments.map((c) => {
@@ -1067,9 +1067,9 @@ function TodoItem({ todo, refreshTodos, userId }) {
                         }`}
                     >
                       <div
-                        className={`max-w-[80%] px-3 py-2 rounded-2xl shadow-sm text-sm ${isMyComment
-                            ? "bg-blue-100 text-blue-800 text-right"
-                            : "bg-gray-100 text-gray-800 text-left"
+                        className={`max-w-[80%] px-2 py-1 rounded-2xl shadow-sm text-sm ${isMyComment
+                          ? "bg-blue-100 text-blue-800 text-right"
+                          : "bg-gray-100 text-gray-800 text-left"
                           }`}
                       >
                         <p className="font-semibold">{c.userName}</p>
@@ -1093,6 +1093,12 @@ function TodoItem({ todo, refreshTodos, userId }) {
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
                   className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault(); // prevent new line
+                      if (newComment.trim()) handleAddComment();
+                    }
+                  }}
                 />
                 <Button
                   onClick={handleAddComment}
@@ -1106,7 +1112,65 @@ function TodoItem({ todo, refreshTodos, userId }) {
               </div>
             </div>
             {/* 🧩 Subtasks Section */}
-            <Button
+            <div className="flex gap-2 mb-2 mt-2">
+              <Input
+                value={subtaskInput}
+                onChange={(e) => setSubtaskInput(e.target.value)}
+                placeholder="Add new subtask..."
+                className="text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+              />
+              <Button size="sm" onClick={handleAddSubtask}>
+                Add
+              </Button>
+            </div>
+            {/* Subtask List */}
+            <div className="max-h-[70px] overflow-y-auto space-y-2 pr-2">
+              {todo.subtasks?.length > 0 ? (
+                todo.subtasks.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded px-2 py-1 border border-gray-200 transition-all"
+                  >
+                    <div
+                      onClick={role !== "client" ? () => handleToggleSubtask(sub) : undefined}
+                      className={`flex items-center gap-2 ${role !== "client" ? "cursor-pointer hover:opacity-80" : "cursor-default"
+                        }`}
+                    >
+                      {sub.completed ? (
+                        <CheckSquare size={16} className="text-green-500" />
+                      ) : (
+                        <Square size={16} className="text-gray-400" />
+                      )}
+                      <span
+                        className={`text-sm ${sub.completed ? "line-through text-gray-400" : "text-gray-700"
+                          }`}
+                      >
+                        {sub.title}
+                      </span>
+                    </div>
+
+                    {role !== "client" && (
+                      <button
+                        onClick={() => handleDeleteSubtask(sub.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400 italic">No subtasks added yet</p>
+              )}
+            </div>
+
+            {/* <Button
               variant="outline"
               onClick={() => setIsSubtaskOpen(true)}
               className="flex gap-2 mt-2 cursor-pointer"
@@ -1129,89 +1193,23 @@ function TodoItem({ todo, refreshTodos, userId }) {
               >
                 <X /> Cancel
               </Button>
-            </DialogFooter>
+            </DialogFooter> */}
           </DialogContent>
         </Dialog>
       )}
       {/* ✅ Separate Subtask Dialog */}
-      <Dialog open={isSubtaskOpen} onOpenChange={setIsSubtaskOpen}>
+      {/* <Dialog open={isSubtaskOpen} onOpenChange={setIsSubtaskOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Subtasks for: {todo.title}</DialogTitle>
           </DialogHeader>
-
-          <div className="flex gap-2 mb-2">
-            <Input
-              value={subtaskInput}
-              onChange={(e) => setSubtaskInput(e.target.value)}
-              placeholder="Add new subtask..."
-              className="text-sm"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
-                  e.preventDefault();
-                  handleAddSubtask();
-                }
-              }}
-            />
-            <Button size="sm" onClick={handleAddSubtask}>
-              Add
-            </Button>
-          </div>
-          {/* Subtask List */}
-          <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {todo.subtasks?.length > 0 ? (
-              todo.subtasks.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="flex items-center justify-between bg-gray-50 rounded px-2 py-1"
-                >
-                  <div
-                    onClick={role !== "client" ? () => handleToggleSubtask(sub) : undefined}
-                    className={`flex items-center gap-2 ${role !== "client" ? "cursor-pointer hover:opacity-80" : "cursor-default"
-                      }`}
-                  >
-                    {sub.completed ? (
-                      <CheckSquare
-                        size={16}
-                        className={role === "client" ? "text-green-400" : "text-green-500"}
-                      />
-                    ) : (
-                      <Square
-                        size={16}
-                        className={role === "client" ? "text-gray-300" : "text-gray-400"}
-                      />
-                    )}
-                    <span
-                      className={`${sub.completed ? "line-through text-gray-400" : "text-gray-700"
-                        } text-sm`}
-                    >
-                      {sub.title}
-                    </span>
-                  </div>
-
-                  {role !== "client" && (
-                    <button
-                      onClick={() => handleDeleteSubtask(sub.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-gray-400 italic">
-                No subtasks added yet
-              </p>
-            )}
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSubtaskOpen(false)}>
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
       {/* ✅ Comment Dialog and subtask for Client */}
       {role === "client" && (
         <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
