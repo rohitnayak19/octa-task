@@ -3,7 +3,8 @@ import { auth, db } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import toast from "react-hot-toast";
-
+import { Spinner} from "../components/ui/spinner"
+import { Button } from "../components/ui/button";
 // 🧩 Exported flag to control auth listener during registration
 // --- Auth listener control flag ---
 let skipAuthListener = false;
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       // 🚫 Skip listener during registration
       if (getSkipAuthListener()) return;
-      
+
       // cleanup old Firestore snapshot listener
       if (unsubUserRef.current) {
         unsubUserRef.current();
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
 
         // If user doc doesn’t exist, sign them out
         if (!snap.exists()) {
-          await signOut(auth).catch(() => {});
+          await signOut(auth).catch(() => { });
           if (mounted.current) {
             setCurrentUser(null);
             setRole(null);
@@ -114,7 +115,7 @@ export function AuthProvider({ children }) {
 
             // If admin sets back to pending → sign out user
             if (liveData.adminStatus && liveData.adminStatus !== "approved") {
-              signOut(auth).catch(() => {});
+              signOut(auth).catch(() => { });
               if (mounted.current) {
                 toast.error("Your account has been set to pending by admin.");
                 setCurrentUser(null);
@@ -157,7 +158,10 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={value}>
       {loading ? (
         <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-700 font-medium">Loading...</p>
+          <Button variant={'secondary'} disabled size={'sm'}>
+            <Spinner/>
+            Loading...
+          </Button>
         </div>
       ) : (
         children

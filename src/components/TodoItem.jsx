@@ -1257,9 +1257,64 @@ function TodoItem({ todo, refreshTodos, userId }) {
               </Button>
             </div>
 
-            <Button onClick={() => setIsSubtaskOpen(true)} variant="outline" className="flex gap-2 mt-4 cursor-pointer">
-              <ListTodo /> {`Subtasks (${todo.subtasks ? todo.subtasks.length : 0})`}
-            </Button>
+             {/* 🧩 Subtasks Section */}
+            <div className="flex gap-2 mb-2 mt-2">
+              <Input
+                value={subtaskInput}
+                onChange={(e) => setSubtaskInput(e.target.value)}
+                placeholder="Add new subtask..."
+                className="text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {  // prevent Shift+Enter new line
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+              />
+              <Button size="sm" onClick={handleAddSubtask}>
+                Add
+              </Button>
+            </div>
+             {/* Subtask List */}
+            <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2">
+              {todo.subtasks?.length > 0 ? (
+                todo.subtasks.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded px-2 py-1 border border-gray-200 transition-all"
+                  >
+                    <div
+                      onClick={role !== "client" ? () => handleToggleSubtask(sub) : undefined}
+                      className={`flex items-center gap-2 ${role !== "client" ? "cursor-pointer hover:opacity-80" : "cursor-default"
+                        }`}
+                    >
+                      {sub.completed ? (
+                        <CheckSquare size={16} className="text-green-500" />
+                      ) : (
+                        <Square size={16} className="text-gray-400" />
+                      )}
+                      <span
+                        className={`text-sm ${sub.completed ? "line-through text-gray-400" : "text-gray-700"
+                          }`}
+                      >
+                        {sub.title}
+                      </span>
+                    </div>
+
+                    {role !== "client" && (
+                      <button
+                        onClick={() => handleDeleteSubtask(sub.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400 italic">No subtasks added yet</p>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       )}

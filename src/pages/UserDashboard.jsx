@@ -437,14 +437,14 @@ function UserDashboard() {
                               <Button className={'cursor-pointer text-green-700'} variant={'outline'} size="sm" onClick={() => handleApprove(client)}>
                                 <Check stroke="green" /> Approve
                               </Button>
-                              <Button
+                              {/* <Button
                                 className={'cursor-pointer'}
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleReject(client)}
                               >
                                 <X stroke="orange" /> Reject
-                              </Button>
+                              </Button> */}
                             </>
                           )}
                           <AlertDialog>

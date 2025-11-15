@@ -18,6 +18,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   LogOut,
   Search,
   UsersRound,
@@ -43,6 +52,12 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../components/ui/accordion";
+import {
   Sheet,
   SheetTrigger,
   SheetContent,
@@ -52,32 +67,24 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import toast from "react-hot-toast";
-
-// ⚡ Lightweight loader for first render (no logic change)
-const SkeletonRow = () => (
-  <div className="flex justify-between items-center p-4 bg-gray-100 rounded-lg mb-2 animate-pulse">
-    <div className="space-y-2">
-      <div className="h-4 w-32 bg-gray-300 rounded" />
-      <div className="h-3 w-20 bg-gray-200 rounded" />
-    </div>
-    <div className="flex gap-2">
-      <div className="h-8 w-8 bg-gray-300 rounded" />
-      <div className="h-8 w-8 bg-gray-300 rounded" />
-      <div className="h-8 w-8 bg-gray-300 rounded" />
-    </div>
-  </div>
-);
-
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import UserDetailForm from "../components/UserDetailForm";
 function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [managers, setManagers] = useState([]);
   const [clients, setClients] = useState([]);
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [copied, setCopied] = useState(false);
   const [managerInfo, setManagerInfo] = useState(null);
+
+  const [showManagerSelect, setShowManagerSelect] = useState(false);
+  const [selectedManager, setSelectedManager] = useState("");
+  const [pendingUserId, setPendingUserId] = useState(null);
+  const [pendingCurrentRole, setPendingCurrentRole] = useState(null);
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -111,6 +118,32 @@ function AdminPanel() {
     };
   }, []);
 
+  // ✅ Real-time listener for selectedUser (Manager Sheet)
+  useEffect(() => {
+    if (!selectedUser?.id) return;
+
+    const unsub = onSnapshot(doc(db, "users", selectedUser.id), (snap) => {
+      if (snap.exists()) {
+        setSelectedUser((prev) => ({ ...prev, ...snap.data() }));
+      }
+    });
+
+    return () => unsub();
+  }, [selectedUser?.id]);
+
+  // ✅ Real-time listener for selectedClient (Client Sheet)
+  useEffect(() => {
+    if (!selectedClient?.id) return;
+
+    const unsub = onSnapshot(doc(db, "users", selectedClient.id), (snap) => {
+      if (snap.exists()) {
+        setSelectedClient((prev) => ({ ...prev, ...snap.data() }));
+      }
+    });
+
+    return () => unsub();
+  }, [selectedClient?.id]);
+
   // 🧠 Fetch linked manager info when client selected
   useEffect(() => {
     const fetchManagerDetails = async () => {
@@ -137,76 +170,83 @@ function AdminPanel() {
     fetchManagerDetails();
   }, [selectedClient?.linkedUserId]);
 
-  // ✅ Change User Role Function
-  const handleChangeRole = async (userId, currentRole) => {
+  // ✅ Change User Role Function (Updated - No Auto Link)
+  const handleChangeRole = (userId, currentRole) => {
+    const readableCurrent = currentRole === "user" ? "Manager" : "Client";
+    const readableNew = currentRole === "user" ? "Client" : "Manager";
+
+    const confirmChange = window.confirm(
+      `Change role from "${readableCurrent}" to "${readableNew}"?`
+    );
+    if (!confirmChange) return;
+
+    if (currentRole === "user") {
+      // Manager → Client
+      setPendingUserId(userId);
+      setPendingCurrentRole(currentRole);
+      setShowManagerSelect(true); // show animated modal
+    } else {
+      convertToManager(userId);
+    }
+  };
+
+  const convertToClient = async (userId, managerId) => {
     try {
       const userRef = doc(db, "users", userId);
-      const newRole = currentRole === "user" ? "client" : "user";
 
-      const confirmChange = window.confirm(
-        `Change role from "${currentRole}" to "${newRole}"?`
-      );
-      if (!confirmChange) return;
+      await updateDoc(userRef, {
+        role: "client",
+        linkedUserId: managerId || "",
+        status: "removed",
+        adminStatus: "pending",
+        devCode: deleteField(),
+        clients: deleteField(),
+      });
 
-      if (newRole === "client") {
-        // 🔹 Convert Manager → Client
-        // Find a manager to link with (optional: choose manually later)
-        const managerSnap = await getDocs(
-          query(collection(db, "users"), where("role", "==", "user"))
-        );
-
-        let linkedManagerId = null;
-        if (!managerSnap.empty) {
-          linkedManagerId = managerSnap.docs[0].id; // Pick first manager by default
-        }
-
-        await updateDoc(userRef, {
-          role: "client",
-          linkedUserId: linkedManagerId || "",
-          status: "removed",
-          adminStatus: "pending",
-          devCode: deleteField(),
-          clients: deleteField(),
+      if (managerId) {
+        await updateDoc(doc(db, "users", managerId), {
+          clients: arrayUnion({
+            id: userId,
+            name: users.find((u) => u.id === userId)?.name || "Unnamed",
+            email: users.find((u) => u.id === userId)?.email || "",
+            status: "pending",
+          }),
         });
-
-        // 🔹 If linked to a manager, add to their clients array
-        if (linkedManagerId) {
-          await updateDoc(doc(db, "users", linkedManagerId), {
-            clients: arrayUnion({
-              id: userId,
-              name: users.find((u) => u.id === userId)?.name || "Unnamed",
-              email: users.find((u) => u.id === userId)?.email || "",
-              status: "pending",
-            }),
-          });
-        }
-
-        toast.success("Converted to Client successfully!");
-      } else {
-        // 🔹 Convert Client → Manager
-        const newDevCode =
-          "MAN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-        await updateDoc(userRef, {
-          role: "user",
-          devCode: newDevCode,
-          clients: [],
-          status: "approved",
-          adminStatus: "pending",
-          linkedUserId: deleteField(),
-        });
-
-        toast.success("Converted to Manager successfully!");
       }
 
-      // Update local state instantly
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId ? { ...u, role: newRole } : u
-        )
+      toast.success(
+        managerId
+          ? "Converted to Client and linked with Manager!"
+          : "Converted to Client (No manager linked)"
       );
+
+      setShowManagerSelect(false);
+      setSelectedManager("");
+      setPendingUserId(null);
     } catch (error) {
-      console.error("Error changing role:", error);
+      console.error("Error converting to client:", error);
+      toast.error("Failed to change role.");
+    }
+  };
+
+  const convertToManager = async (userId) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      const newDevCode =
+        "MAN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      await updateDoc(userRef, {
+        role: "user",
+        devCode: newDevCode,
+        clients: [],
+        status: "approved",
+        adminStatus: "pending",
+        linkedUserId: deleteField(),
+      });
+
+      toast.success("Converted to Manager successfully!");
+    } catch (error) {
+      console.error("Error converting to manager:", error);
       toast.error("Failed to change role.");
     }
   };
@@ -250,22 +290,37 @@ function AdminPanel() {
   // ✅ Toggle Admin Approval
   const handleToggleApproval = async (userId, currentStatus) => {
     const newStatus = currentStatus === "approved" ? "pending" : "approved";
+
+    // 🧠 Custom confirmation message
+    const confirmChange = window.confirm(
+      newStatus === "approved"
+        ? "Are you sure you want to APPROVE this user?"
+        : "Are you sure you want to set this user back to PENDING?"
+    );
+
+    if (!confirmChange) return; // ❌ Stop if user cancels
+
     try {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { adminStatus: newStatus });
+
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, adminStatus: newStatus } : u))
+        prev.map((u) =>
+          u.id === userId ? { ...u, adminStatus: newStatus } : u
+        )
       );
+
       toast.success(
         newStatus === "approved"
-          ? "User approved successfully!"
-          : "User set to pending!"
+          ? "✅ User approved successfully!"
+          : "⚠️ User set to pending!"
       );
     } catch (error) {
       console.error("Error updating adminStatus:", error);
-      toast.error("Failed to update admin status.");
+      toast.error("❌ Failed to update admin status.");
     }
   };
+
 
   //Status badge color logic
   const getStatusBadgeColor = (status) => {
@@ -278,6 +333,23 @@ function AdminPanel() {
         return "bg-red-100 text-red-700 border-red-300";
       default:
         return "bg-gray-100 text-gray-700 border-gray-300";
+    }
+  };
+
+  const handleOpenDetails = async (user) => {
+    try {
+      const userRef = doc(db, "users", user.id);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setSelectedUser({ ...user, ...data }); // Merge firestore data into local user object
+      } else {
+        setSelectedUser(user);
+      }
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+      setSelectedUser(user);
     }
   };
 
@@ -402,7 +474,7 @@ function AdminPanel() {
                           </Tooltip>
 
                           {/* 🔁 Change Role */}
-                          <Tooltip>
+                          {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 size="icon"
@@ -415,7 +487,7 @@ function AdminPanel() {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Change Role</TooltipContent>
-                          </Tooltip>
+                          </Tooltip> */}
 
                           {/* 📊 View Dashboard */}
                           <Tooltip>
@@ -441,7 +513,7 @@ function AdminPanel() {
                                     variant="outline"
                                     aria-label="View Details"
                                     className="text-indigo-700 border-indigo-400 hover:scale-105 transition-all active:scale-95 cursor-pointer"
-                                    onClick={() => setSelectedUser(user)}
+                                    onClick={() => handleOpenDetails(user)} // ✅ updated
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
@@ -486,14 +558,18 @@ function AdminPanel() {
                                     <div className="space-y-3 text-sm text-gray-700">
                                       <div className="flex justify-between items-center">
                                         <span className="font-medium">Role:</span>
-                                        <span className="capitalize">{selectedUser.role === "user" && "Manager"}</span>
+                                        <span className="capitalize">
+                                          {selectedUser.role === "user" ? "Manager" : "Client"}
+                                        </span>
                                       </div>
 
                                       <div className="flex justify-between items-center">
                                         <span className="font-medium">Status:</span>
                                         <Badge
                                           variant="outline"
-                                          className={`${getStatusBadgeColor(selectedUser.adminStatus)} capitalize`}
+                                          className={`${getStatusBadgeColor(
+                                            selectedUser.adminStatus
+                                          )} capitalize`}
                                         >
                                           {selectedUser.adminStatus || "pending"}
                                         </Badge>
@@ -514,8 +590,7 @@ function AdminPanel() {
                                       <div className="mt-6 space-y-3">
                                         <p className="font-medium text-gray-800">Manager Details</p>
 
-                                        {/* ✅ Copyable Manager Code */}
-                                        <div className="flex items-center gap-3 border bg-yellow-50/70 px-3 py-2 rounded-lg hover:shadow-sm transition-all duration-200">
+                                        <div className="flex items-center gap-3 border bg-yellow-50/70 px-3 py-2 rounded-lg">
                                           <span className="text-sm font-semibold text-gray-700">
                                             Manager Code:
                                           </span>
@@ -525,9 +600,8 @@ function AdminPanel() {
                                           <Button
                                             size="icon"
                                             variant="outline"
-                                            aria-label="Copy Manager Code"
                                             onClick={handleCopyDevCode}
-                                            className={`border-yellow-300 cursor-pointer hover:bg-yellow-100 hover:-translate-y-[1px] active:scale-90 ease-in transition-all duration-200 ${copied
+                                            className={`border-yellow-300 hover:bg-yellow-100 ${copied
                                               ? "bg-green-100 border-green-400 text-green-700"
                                               : "text-gray-700"
                                               }`}
@@ -540,7 +614,7 @@ function AdminPanel() {
                                           </Button>
                                         </div>
 
-                                        {/* 👥 Clients */}
+                                        {/* 👥 Clients List */}
                                         <div className="bg-gray-50 p-3 rounded-lg border">
                                           <p>
                                             <strong>Total Clients:</strong>{" "}
@@ -554,17 +628,21 @@ function AdminPanel() {
                                                   className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border hover:bg-gray-100 transition-all duration-200"
                                                 >
                                                   <div className="flex flex-col text-sm">
-                                                    <span className="font-medium text-gray-800">{c.name || "Unnamed Client"}</span>
-                                                    <span className="text-gray-500 text-xs">{c.email}</span>
+                                                    <span className="font-medium text-gray-800">
+                                                      {c.name || "Unnamed Client"}
+                                                    </span>
+                                                    <span className="text-gray-500 text-xs">
+                                                      {c.email}
+                                                    </span>
                                                   </div>
 
                                                   <Badge
                                                     variant="outline"
                                                     className={`text-xs ${c.status === "approved"
-                                                        ? "bg-green-100 text-green-700 border-green-300"
-                                                        : c.status === "pending"
-                                                          ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                                                          : "bg-gray-100 text-gray-700 border-gray-300"
+                                                      ? "bg-green-100 text-green-700 border-green-300"
+                                                      : c.status === "pending"
+                                                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                                        : "bg-gray-100 text-gray-700 border-gray-300"
                                                       }`}
                                                   >
                                                     {c.status || "pending"}
@@ -573,29 +651,96 @@ function AdminPanel() {
                                               ))}
                                             </div>
                                           )}
-
                                         </div>
-                                      </div>
-                                    )}
 
-                                    {/* 👤 Client Section */}
-                                    {selectedUser.role === "client" && (
-                                      <div className="bg-gray-50 rounded-lg p-3 border mt-6">
-                                        <p>
-                                          <strong>Linked Manager:</strong>{" "}
-                                          {selectedUser.linkedUserId || "N/A"}
-                                        </p>
-                                        <p>
-                                          <strong>Client Status:</strong>{" "}
-                                          {selectedUser.status || "N/A"}
-                                        </p>
+                                        {/* 🧾 Accordion (Additional Details) */}
+                                        <Accordion
+                                          type="single"
+                                          collapsible
+                                          className="mt-6 border rounded-lg bg-gray-50/80 shadow-sm"
+                                        >
+                                          <AccordionItem value="details">
+                                            <AccordionTrigger className="px-4 font-semibold text-gray-800">
+                                              Additional Details
+                                            </AccordionTrigger>
+                                            <AccordionContent className="px-4 pb-3 text-sm text-gray-700 space-y-2">
+                                              {selectedUser.address && (
+                                                <p>
+                                                  <strong>Address:</strong> {selectedUser.address}
+                                                </p>
+                                              )}
+                                              {selectedUser.department && (
+                                                <p>
+                                                  <strong>Department:</strong>{" "}
+                                                  {selectedUser.department}
+                                                </p>
+                                              )}
+                                              {selectedUser.roleLevel && (
+                                                <p>
+                                                  <strong>Role Level:</strong>{" "}
+                                                  {selectedUser.roleLevel}
+                                                </p>
+                                              )}
+                                              {selectedUser.salary && (
+                                                <p>
+                                                  <strong>Salary:</strong> ₹{selectedUser.salary}
+                                                </p>
+                                              )}
+                                              {selectedUser.bankName && (
+                                                <p>
+                                                  <strong>Bank:</strong> {selectedUser.bankName}
+                                                </p>
+                                              )}
+                                              {selectedUser.ifscCode && (
+                                                <p>
+                                                  <strong>IFSC Code:</strong>{" "}
+                                                  {selectedUser.ifscCode}
+                                                </p>
+                                              )}
+                                              {selectedUser.joinDate && (
+                                                <p>
+                                                  <strong>Join Date:</strong>{" "}
+                                                  {selectedUser.joinDate}
+                                                </p>
+                                              )}
+                                              {selectedUser.aadharUrl && (
+                                                <p>
+                                                  <strong>Aadhar File:</strong>{" "}
+                                                  <a
+                                                    href={selectedUser.aadharUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-blue-600 underline"
+                                                  >
+                                                    View File
+                                                  </a>
+                                                </p>
+                                              )}
+                                            </AccordionContent>
+                                          </AccordionItem>
+                                        </Accordion>
                                       </div>
                                     )}
+                                    {/* 🧾 Add / Edit More Details Button */}
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button className="mt-4 w-full bg-yellow-400 text-white hover:bg-yellow-500 font-semibold shadow-sm">
+                                          Add / Edit More Details
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-2xl">
+                                        <UserDetailForm
+                                          userId={selectedUser.id}
+                                          role={selectedUser.role}
+                                          basicInfo={selectedUser}
+                                          onClose={() => console.log("closed")}
+                                        />
+                                      </DialogContent>
+                                    </Dialog>
 
                                     {/* 🔘 Close Button */}
                                     <SheetClose asChild>
                                       <Button
-                                        aria-label="Close Details"
                                         variant="outline"
                                         className="w-full mt-6 hover:bg-gray-100 transition-all"
                                       >
@@ -681,7 +826,7 @@ function AdminPanel() {
                             </Tooltip>
 
                             {/* 🔁 Change Role */}
-                            <Tooltip>
+                            {/* <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   size="icon"
@@ -694,7 +839,8 @@ function AdminPanel() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Change Role</TooltipContent>
-                            </Tooltip>
+                            </Tooltip> */}
+                            
                             {/* 👁️ View Details (Sheet Drawer) */}
                             <Sheet>
                               <Tooltip>
@@ -770,10 +916,11 @@ function AdminPanel() {
                                           </span>
                                         </div>
                                       </div>
-
                                       {/* 👨‍💼 Linked Manager Section */}
                                       <div className="bg-gray-50 rounded-lg p-3 border mt-6">
-                                        <p className="font-semibold text-gray-800 mb-2">Linked Manager Details</p>
+                                        <p className="font-semibold text-gray-800 mb-2">
+                                          Linked Manager Details
+                                        </p>
 
                                         {managerInfo ? (
                                           <div className="text-sm space-y-1">
@@ -797,16 +944,91 @@ function AdminPanel() {
                                         <div className="mt-3 border-t pt-2">
                                           <p>
                                             <strong>Client Status:</strong>{" "}
-                                            <span className={`capitalize text-sm text-gray-700 ${selectedClient.status === "approved" ?
-                                              "text-green-700 bg-green-100 p-1 rounded-md px-2 py-px" : selectedClient.status === "pending" ? "text-yellow-300 bg-yellow-100 px-2 py-px rounded-md" : selectedClient.status === "removed" ? "text-red-300 bg-red-100 px-1 py-px rounded-md" : "text-gray-500"
-                                              }`}>
+                                            <Badge
+                                              variant="outline"
+                                              className={`${getStatusBadgeColor(
+                                                selectedClient.status
+                                              )} capitalize`}
+                                            >
                                               {selectedClient.status || "N/A"}
-                                            </span>
+                                            </Badge>
                                           </p>
                                         </div>
+
+                                        {/* 🧾 Accordion (Client Extra Details) */}
+                                        <Accordion
+                                          type="single"
+                                          collapsible
+                                          className="mt-4 border rounded-lg bg-gray-50/80 shadow-sm"
+                                        >
+                                          <AccordionItem value="client-extra">
+                                            <AccordionTrigger className="px-4 font-semibold text-gray-800">
+                                              Additional Details
+                                            </AccordionTrigger>
+                                            <AccordionContent className="px-4 pb-3 text-sm text-gray-700 space-y-2">
+                                              {selectedClient.bankName && (
+                                                <p>
+                                                  <strong>Bank Name:</strong> {selectedClient.bankName}
+                                                </p>
+                                              )}
+                                              {selectedClient.accountNumber && (
+                                                <p>
+                                                  <strong>Account Number:</strong> {selectedClient.accountNumber}
+                                                </p>
+                                              )}
+                                              {selectedClient.ifscCode && (
+                                                <p>
+                                                  <strong>IFSC Code:</strong> {selectedClient.ifscCode}
+                                                </p>
+                                              )}
+                                              {selectedClient.gstNumber && (
+                                                <p>
+                                                  <strong>GST Number:</strong> {selectedClient.gstNumber}
+                                                </p>
+                                              )}
+                                              {selectedClient.aadharUrl && (
+                                                <p>
+                                                  <strong>Aadhar File:</strong>{" "}
+                                                  <a
+                                                    href={selectedClient.aadharUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-blue-600 underline"
+                                                  >
+                                                    View Aadhar
+                                                  </a>
+                                                </p>
+                                              )}
+                                              {!selectedClient.bankName &&
+                                                !selectedClient.ifscCode &&
+                                                !selectedClient.gstNumber &&
+                                                !selectedClient.aadharUrl && (
+                                                  <p className="text-gray-500 italic">
+                                                    No additional details added.
+                                                  </p>
+                                                )}
+                                            </AccordionContent>
+                                          </AccordionItem>
+                                        </Accordion>
                                       </div>
 
+                                      {/* 🧾 Add / Edit More Details Button + Dialog */}
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button className="mt-4 w-full bg-yellow-400 text-white hover:bg-yellow-500 cursor-pointer font-semibold shadow-sm">
+                                            Add / Edit More Details
+                                          </Button>
+                                        </DialogTrigger>
 
+                                        <DialogContent className="max-w-2xl">
+                                          <UserDetailForm
+                                            userId={client.id}
+                                            role={client.role}
+                                            basicInfo={selectedUser}
+                                            onClose={() => console.log("closed")}
+                                          />
+                                        </DialogContent>
+                                      </Dialog>
                                       {/* 🔘 Close Button */}
                                       <SheetClose asChild>
                                         <Button
@@ -851,6 +1073,62 @@ function AdminPanel() {
             </Tabs>
           </CardContent>
         </Card>
+        <AnimatePresence>
+          {showManagerSelect && (
+            <motion.div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 40 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 40 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                className="bg-white rounded-2xl shadow-2xl p-6 w-96 border border-gray-200"
+              >
+                <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
+                  Select Manager to Link
+                </h2>
+
+                <select
+                  value={selectedManager}
+                  onChange={(e) => setSelectedManager(e.target.value)}
+                  className="border border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- No Manager (Keep Unlinked) --</option>
+                  {users
+                    .filter((u) => u.role === "user")
+                    .map((manager) => (
+                      <option key={manager.id} value={manager.id}>
+                        {manager.name} ({manager.email})
+                      </option>
+                    ))}
+                </select>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowManagerSelect(false);
+                      setSelectedManager("");
+                    }}
+                    className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={() => convertToClient(pendingUserId, selectedManager)}
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div >
     </>
   );

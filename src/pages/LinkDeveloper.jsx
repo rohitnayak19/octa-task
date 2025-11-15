@@ -72,7 +72,7 @@ function LinkDeveloper() {
         />
         <Button
           onClick={handleLink}
-          className={'w-full'}
+          className={'w-full h-10 bg-[#f7e347] hover:bg-[#edda4c] text-white font-semibold rounded-lg transition-all cursor-pointer'}
         >
           Send Request
         </Button>

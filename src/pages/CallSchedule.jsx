@@ -14,6 +14,7 @@ import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -63,8 +64,8 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Trash2, Edit, Plus, Search } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Trash2, Edit, Plus, FileText,CalendarDays, Search, Download } from "lucide-react";
+import { format, set } from "date-fns";
 import toast from "react-hot-toast";
 import { subDays, subMonths, subYears, isWithinInterval } from "date-fns";
 import Navbar from "../components/Navbar";
@@ -75,7 +76,6 @@ function CallSchedule() {
     const { userId } = useParams()
     const { role, currentUser } = useAuth();
     const [calls, setCalls] = useState([]);
-
     // CRM fields
     const [campaign, setCampaign] = useState("");
     const [businessType, setBusinessType] = useState("");
@@ -85,6 +85,8 @@ function CallSchedule() {
     const [serviceFollowUpDate, setServiceFollowUpDate] = useState(null);
     const [sourceOfLead, setSourceOfLead] = useState("");
     const [date, setDate] = useState(null);
+    const [customDate, setCustomDate] = useState(null);
+    const [note, setNote] = useState("");
 
     const [filter, setFilter] = useState("all");
     const [editId, setEditId] = useState(null);
@@ -125,7 +127,8 @@ function CallSchedule() {
 
     // Add / Update
     const handleSave = async () => {
-        if (!campaign || !businessType || !ownerName || !date) {
+        const finalDate = date ? date : new Date();
+        if (!campaign || !businessType || !ownerName) {
             toast.error("Campaign, Business Type, Owner Name, Date required");
             return;
         }
@@ -148,7 +151,8 @@ function CallSchedule() {
                     status,
                     serviceFollowUpDate,
                     sourceOfLead,
-                    date,
+                    date: finalDate,
+                    note,
                 });
                 toast.success("Lead updated");
             } else {
@@ -161,8 +165,9 @@ function CallSchedule() {
                     status,
                     serviceFollowUpDate,
                     sourceOfLead,
-                    date,
+                    date: finalDate,
                     createdAt: new Date(),
+                    note,
                 });
 
                 toast.success("Lead added");
@@ -197,6 +202,7 @@ function CallSchedule() {
         setServiceFollowUpDate(null);
         setSourceOfLead("");
         setDate(null);
+        setNote("");
         setEditId(null);
     };
 
@@ -225,6 +231,9 @@ function CallSchedule() {
             }
             if (filter === "tomorrow") {
                 return callDate.toDateString() === tomorrow.toDateString();
+            }
+            if (filter === "custom" && customDate) {
+                return callDate.toDateString() === customDate.toDateString();
             }
             return true;
         })
@@ -285,44 +294,88 @@ function CallSchedule() {
             <Navbar />
             <div className="space-y-6 p-4 max-w-8xl mx-auto">
                 {/* Filters */}
-                <div className="flex gap-2">
+                <div className="flex gap-3">
+                    {/* All */}
                     <Button
-                        className="cursor-pointer"
-                        variant={filter === "all" ? "default" : "outline"}
                         onClick={() => setFilter("all")}
+                        variant={filter === "all" ? "default" : "outline"}
+                        className={`cursor-pointer flex items-center gap-2 px-5 py-2 rounded-xl shadow-sm 
+            ${filter === "all" ? "bg-black text-white" : "bg-white"}`}
                     >
-                        All <Badge className="ml-2">{calls.length}</Badge>
+                        All
+                        <Badge className="ml-1 bg-gray-900 text-white px-2 py-0.5 rounded-full">
+                            {calls.length}
+                        </Badge>
                     </Button>
+
+                    {/* Today */}
                     <Button
-                        variant={filter === "today" ? "default" : "outline"}
                         onClick={() => setFilter("today")}
-                        className="flex items-center gap-2 cursor-pointer"
+                        variant={filter === "today" ? "default" : "outline"}
+                        className={`cursor-pointer flex items-center gap-2 px-5 py-2 rounded-xl shadow-sm
+            ${filter === "today" ? "bg-red-600 text-white" : "bg-white"}`}
                     >
                         Today
-                        {todayCount > 0 && (
-                            <Badge className="bg-red-600 text-white">{todayCount}</Badge>
-                        )}
+                        <Badge
+                            className="ml-1 bg-red-600 text-white px-2 py-0.5 rounded-full shadow-sm"
+                        >
+                            {todayCount}
+                        </Badge>
                     </Button>
+
+                    {/* Tomorrow */}
                     <Button
-                        variant={filter === "tomorrow" ? "default" : "outline"}
                         onClick={() => setFilter("tomorrow")}
-                        className="flex items-center gap-2 cursor-poiner"
+                        variant={filter === "tomorrow" ? "default" : "outline"}
+                        className={`cursor-pointer flex items-center gap-2 px-5 py-2 rounded-xl shadow-sm
+            ${filter === "tomorrow" ? "bg-blue-600 text-white" : "bg-white"}`}
                     >
                         Tomorrow
-                        {tomorrowCount > 0 && (
-                            <Badge className="bg-blue-600 text-white">{tomorrowCount}</Badge>
-                        )}
+                        <Badge
+                            className="ml-1 bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm"
+                        >
+                            {tomorrowCount}
+                        </Badge>
                     </Button>
-                </div>
 
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={filter === "custom" ? "default" : "outline"}
+                                onClick={() => setFilter("custom")}
+                                className={`cursor-pointer flex items-center gap-2 px-5 py-2 rounded-xl shadow-sm
+                ${filter === "custom" ? "bg-green-600 text-white" : "bg-white"}`}
+                            >
+                               <CalendarDays/> {customDate ? format(customDate, "PPP") : "Pick Date"}
+                            </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={customDate}
+                                onSelect={(d) => {
+                                    setCustomDate(d);
+                                    setFilter("custom");
+                                }}
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                </div>
                 {/* Toolbar */}
                 <div className="flex flex-col md:flex-row justify-between gap-2">
-                    <Input
-                        placeholder="Search leads..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="max-w-sm"
-                    />
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+
+                        <Input
+                            placeholder="Search leads..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-10 py-2 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
                     <div className="flex gap-1">
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[200px]">
@@ -476,6 +529,13 @@ function CallSchedule() {
                                         onChange={(e) => setSourceOfLead(e.target.value)}
                                     />
 
+                                    <Textarea
+                                        placeholder="Type what you discussed with the lead..."
+                                        value={note}
+                                        onChange={(e) => setNote(e.target.value)}
+                                        className="mt-1"
+                                    />
+
                                     {/* Main Date */}
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -524,6 +584,7 @@ function CallSchedule() {
                                         <TableHead>Follow Up</TableHead>
                                         <TableHead>Source</TableHead>
                                         <TableHead>Date</TableHead>
+                                        <TableHead>Notes</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -570,7 +631,7 @@ function CallSchedule() {
                                                             }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm hover:bg-blue-100 transition"
+                                                            className={`px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm hover:bg-blue-100 transition`}
                                                         >
                                                             {c.sourceOfLead.includes("instagram")
                                                                 ? "Instagram"
@@ -593,6 +654,26 @@ function CallSchedule() {
                                                     ? format(new Date(c.date.seconds * 1000), "PPP")
                                                     : format(new Date(c.date), "PPP")}
                                             </TableCell>
+                                            <TableCell>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="outline" size="xs" className="text-blue-600 py-1 px-2">
+                                                            <FileText /> See Note
+                                                        </Button>
+                                                    </DialogTrigger>
+
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>Lead Notes</DialogTitle>
+                                                        </DialogHeader>
+
+                                                        <div className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">
+                                                            {c.note ? c.note : "No notes added."}
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </TableCell>
+
                                             <TableCell className="flex gap-2">
                                                 <Button
                                                     className="cursor-pointer"
@@ -612,6 +693,7 @@ function CallSchedule() {
                                                         );
                                                         setSourceOfLead(c.sourceOfLead || "");
                                                         setDate(new Date(c.date?.seconds ? c.date.seconds * 1000 : c.date));
+                                                        setNote(c.note || "");
                                                         setOpen(true);
                                                     }}
                                                 >
@@ -689,14 +771,50 @@ function CallSchedule() {
                 <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Pie Chart by Status */}
                     <Card>
-                        <div className="flex flex-wrap gap-2 mb-4 ml-5">
-                            <Button variant={statusRange === "7d" ? "default" : "outline"} onClick={() => setStatusRange("7d")}>Last 7 Days</Button>
-                            <Button variant={statusRange === "1m" ? "default" : "outline"} onClick={() => setStatusRange("1m")}>Last 1 Month</Button>
-                            <Button variant={statusRange === "1y" ? "default" : "outline"} onClick={() => setStatusRange("1y")}>Last 1 Year</Button>
+                        <div className="flex flex-wrap gap-3 mb-4 ml-5">
 
+                            {/* Last 7 Days */}
+                            <Button
+                                variant={statusRange === "7d" ? "default" : "outline"}
+                                className={`rounded-xl px-4 py-2 shadow-sm 
+            ${statusRange === "7d" ? "bg-black text-white" : ""}
+        `}
+                                onClick={() => setStatusRange("7d")}
+                            >
+                                Last 7 Days
+                            </Button>
+
+                            {/* Last 1 Month */}
+                            <Button
+                                variant={statusRange === "1m" ? "default" : "outline"}
+                                className={`rounded-xl px-4 py-2 shadow-sm 
+            ${statusRange === "1m" ? "bg-black text-white" : ""}
+        `}
+                                onClick={() => setStatusRange("1m")}
+                            >
+                                Last 1 Month
+                            </Button>
+
+                            {/* Last 1 Year */}
+                            <Button
+                                variant={statusRange === "1y" ? "default" : "outline"}
+                                className={`rounded-xl px-4 py-2 shadow-sm 
+            ${statusRange === "1y" ? "bg-black text-white" : ""}
+        `}
+                                onClick={() => setStatusRange("1y")}
+                            >
+                                Last 1 Year
+                            </Button>
+
+                            {/* Custom Range */}
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant={statusRange === "custom" ? "default" : "outline"}>
+                                    <Button
+                                        variant={statusRange === "custom" ? "default" : "outline"}
+                                        className={`rounded-xl px-4 py-2 shadow-sm flex items-center gap-2
+                    ${statusRange === "custom" ? "bg-black text-white" : ""}
+                `}
+                                    >
                                         {statusCustomRange?.start && statusCustomRange?.end
                                             ? `${format(statusCustomRange.start, "MMM d")} - ${format(
                                                 statusCustomRange.end,
@@ -704,9 +822,9 @@ function CallSchedule() {
                                             )}`
                                             : "Custom Range"}
                                     </Button>
-
                                 </PopoverTrigger>
-                                <PopoverContent>
+
+                                <PopoverContent className="p-3 rounded-xl shadow-xl border bg-white">
                                     <Calendar
                                         mode="range"
                                         selected={statusCustomRange}
@@ -714,11 +832,11 @@ function CallSchedule() {
                                             setStatusCustomRange(range);
                                             setStatusRange("custom");
                                         }}
+                                        className="rounded-xl"
                                     />
                                 </PopoverContent>
                             </Popover>
                         </div>
-
                         <CardHeader>
                             <CardTitle>Leads by Status</CardTitle>
                             <CardDescription>Distribution of leads</CardDescription>
@@ -799,21 +917,36 @@ function CallSchedule() {
                     <Card>
                         <CardHeader>
                             {/* Filter Buttons */}
-                            <div className="flex flex-wrap gap-2 mb-4">
+                            <div className="flex flex-wrap gap-3 mb-4">
+
+                                {/* Last 7 Days */}
                                 <Button
                                     variant={businessRange === "7d" ? "default" : "outline"}
+                                    className={`rounded-xl px-4 py-2 shadow-sm
+            ${businessRange === "7d" ? "bg-black text-white" : ""}
+        `}
                                     onClick={() => setBusinessRange("7d")}
                                 >
                                     Last 7 Days
                                 </Button>
+
+                                {/* Last 1 Month */}
                                 <Button
                                     variant={businessRange === "1m" ? "default" : "outline"}
+                                    className={`rounded-xl px-4 py-2 shadow-sm
+            ${businessRange === "1m" ? "bg-black text-white" : ""}
+        `}
                                     onClick={() => setBusinessRange("1m")}
                                 >
                                     Last 1 Month
                                 </Button>
+
+                                {/* Last 1 Year */}
                                 <Button
                                     variant={businessRange === "1y" ? "default" : "outline"}
+                                    className={`rounded-xl px-4 py-2 shadow-sm
+            ${businessRange === "1y" ? "bg-black text-white" : ""}
+        `}
                                     onClick={() => setBusinessRange("1y")}
                                 >
                                     Last 1 Year
@@ -822,7 +955,12 @@ function CallSchedule() {
                                 {/* Custom Range */}
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant={businessRange === "custom" ? "default" : "outline"}>
+                                        <Button
+                                            variant={businessRange === "custom" ? "default" : "outline"}
+                                            className={`rounded-xl px-4 py-2 shadow-sm flex items-center gap-2
+                    ${businessRange === "custom" ? "bg-black text-white" : ""}
+                `}
+                                        >
                                             {businessCustomRange?.start && businessCustomRange?.end
                                                 ? `${format(businessCustomRange.start, "MMM d")} - ${format(
                                                     businessCustomRange.end,
@@ -830,9 +968,9 @@ function CallSchedule() {
                                                 )}`
                                                 : "Custom Range"}
                                         </Button>
-
                                     </PopoverTrigger>
-                                    <PopoverContent>
+
+                                    <PopoverContent className="p-3 rounded-xl shadow-xl border bg-white">
                                         <Calendar
                                             mode="range"
                                             selected={businessCustomRange}
@@ -840,6 +978,7 @@ function CallSchedule() {
                                                 setBusinessCustomRange(range);
                                                 setBusinessRange("custom");
                                             }}
+                                            className="rounded-xl"
                                         />
                                     </PopoverContent>
                                 </Popover>

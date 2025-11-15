@@ -51,7 +51,6 @@ function Home() {
     clients: 0,
   });
 
-
   // 🔹 Listen for realtime updates from Firestore
   useEffect(() => {
     if (!currentUser) return;
@@ -107,7 +106,6 @@ function Home() {
   ];
 
   const randomQuote = managerQuotes[Math.floor(Math.random() * managerQuotes.length)];
-
 
   const tabs = [
     { key: "todos", label: "To-do" },
@@ -338,7 +336,7 @@ function Home() {
                                       >
                                         <Check size={14} /> Approve
                                       </Button>
-                                      <Button
+                                      {/* <Button
                                         size="sm"
                                         className="flex cursor-pointer items-center gap-1"
                                         variant="outline"
@@ -347,7 +345,7 @@ function Home() {
                                         }
                                       >
                                         <X size={14} stroke="orange" /> Reject
-                                      </Button>
+                                      </Button> */}
                                     </>
                                   )}
                                   <AlertDialog>

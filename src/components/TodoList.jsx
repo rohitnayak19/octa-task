@@ -3,7 +3,6 @@ import { db, auth } from "../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import TodoItem from "./TodoItem";
 import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
@@ -20,6 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 function TodoList({ activeTab, role, userId }) {
   const [todos, setTodos] = useState([]);
@@ -28,7 +35,6 @@ function TodoList({ activeTab, role, userId }) {
   const [open, setOpen] = useState(false);
   // const [isDialogOpen, setIsDialogOpen] = useState(false);
   // const [selectedTodo, setSelectedTodo] = useState(null);
-
   const [priorityFilter, setPriorityFilter] = useState("all");
 
   useEffect(() => {
@@ -135,6 +141,19 @@ function TodoList({ activeTab, role, userId }) {
       );
     });
 
+  // ✅ Pagination logic — only after filteredTodos is defined
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  const totalPages = Math.ceil(filteredTodos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTodos = filteredTodos.slice(startIndex, endIndex);
+
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
 
   return (
     <div>
@@ -241,8 +260,8 @@ function TodoList({ activeTab, role, userId }) {
 
       {/* ✅ Show tasks */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-        {filteredTodos.length > 0 ? (
-          [...filteredTodos]
+        {paginatedTodos.length > 0 ? (
+          [...paginatedTodos]
             .sort((a, b) => {
               // handle missing timestamps safely
               const timeA = a.createdAt?.seconds || 0
@@ -271,6 +290,40 @@ function TodoList({ activeTab, role, userId }) {
           </div>
         )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    currentPage < totalPages && setCurrentPage(currentPage + 1)
+                  }
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
     </div>
   );

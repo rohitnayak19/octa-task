@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Spinner } from "../components/ui/spinner";
 
 function ClientDashboard() {
   const { currentUser } = useAuth();
@@ -106,14 +107,17 @@ function ClientDashboard() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+        <Button variant={'outline'} disabled size={'sm'} >
+          <Spinner/>
+          Loading...
+        </Button>
       </div>
     );
   }
 
-  if (!clientInfo) {
-    return <p className="text-center mt-10 text-red-600">Client record not found.</p>;
-  }
+  // if (!clientInfo) {
+  //   return <p className="text-center mt-10 text-red-600">Client record not found.</p>;
+  // }
 
   if (clientInfo.status === "pending") {
     return (
