@@ -83,7 +83,7 @@ function CallSchedule() {
     const [ownerContact, setOwnerContact] = useState("");
     const [status, setStatus] = useState("");
     const [serviceFollowUpDate, setServiceFollowUpDate] = useState(null);
-    const [sourceOfLead, setSourceOfLead] = useState("");
+    const [sourceOfLead, setSourceOfLead] = useState([""]);
     const [date, setDate] = useState(null);
     const [customDate, setCustomDate] = useState(null);
     const [note, setNote] = useState("");
@@ -151,7 +151,7 @@ function CallSchedule() {
                     ownerContact,
                     status,
                     serviceFollowUpDate,
-                    sourceOfLead,
+                    sourceOfLead: sourceOfLead.filter((x) => x.trim() !== ""), // remove empty fields
                     date: finalDate,
                     note,
                 });
@@ -165,7 +165,7 @@ function CallSchedule() {
                     ownerContact,
                     status,
                     serviceFollowUpDate,
-                    sourceOfLead,
+                    sourceOfLead: sourceOfLead.filter((x) => x.trim() !== ""),
                     date: finalDate,
                     createdAt: new Date(),
                     note,
@@ -201,7 +201,7 @@ function CallSchedule() {
         setOwnerContact("");
         setStatus("");
         setServiceFollowUpDate(null);
-        setSourceOfLead("");
+        setSourceOfLead([""]);
         setDate(null);
         setNote("");
         setEditId(null);
@@ -260,7 +260,11 @@ function CallSchedule() {
                 (c.ownerName || "").toLowerCase().includes(q) ||
                 (c.ownerContact || "").toLowerCase().includes(q) ||
                 (c.status || "").toLowerCase().includes(q) ||
-                (c.sourceOfLead || "").toLowerCase().includes(q)
+                (
+                    Array.isArray(c.sourceOfLead)
+                        ? c.sourceOfLead.join(" ").toLowerCase()
+                        : (c.sourceOfLead || "").toLowerCase()
+                ).includes(q)
             );
         })
         .filter((c) => {
@@ -588,11 +592,44 @@ function CallSchedule() {
                                         </PopoverContent>
                                     </Popover>
 
-                                    <Input
-                                        placeholder="Source of Lead"
-                                        value={sourceOfLead}
-                                        onChange={(e) => setSourceOfLead(e.target.value)}
-                                    />
+                                    <div className="space-y-2">
+                                        {sourceOfLead.map((src, index) => (
+                                            <div key={index} className="flex items-center gap-2 mt-2">
+                                                <Input
+                                                    placeholder="Source of Lead"
+                                                    value={src}
+                                                    onChange={(e) => {
+                                                        const updated = [...sourceOfLead];
+                                                        updated[index] = e.target.value;
+                                                        setSourceOfLead(updated);
+                                                    }}
+                                                />
+
+                                                {/* Remove button (show only when more than 1 input) */}
+                                                {sourceOfLead.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        className="px-2 py-1 bg-red-100 text-red-400 cursor-pointer rounded"
+                                                        onClick={() => {
+                                                            setSourceOfLead(sourceOfLead.filter((_, i) => i !== index));
+                                                        }}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        {/* Add new input */}
+                                        <Button
+                                            variant="outline"
+                                            className="mt-1"
+                                            onClick={() => setSourceOfLead([...sourceOfLead, ""])}
+                                        >
+                                            + Add More Source
+                                        </Button>
+                                    </div>
+
 
                                     <Textarea
                                         placeholder="Type what you discussed with the lead..."
@@ -686,32 +723,43 @@ function CallSchedule() {
                                                     : "-"}
                                             </TableCell>
                                             <TableCell>
-                                                {c.sourceOfLead ? (
-                                                    c.sourceOfLead.match(/(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,})/i) ? (
-                                                        <a
-                                                            href={
-                                                                c.sourceOfLead.startsWith("http")
-                                                                    ? c.sourceOfLead
-                                                                    : `https://${c.sourceOfLead.replace(/^\/+/, "")}`
-                                                            }
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm hover:bg-blue-100 transition`}
-                                                        >
-                                                            {c.sourceOfLead.includes("instagram")
+                                                {(Array.isArray(c.sourceOfLead) ? c.sourceOfLead : [c.sourceOfLead])
+                                                    .filter(Boolean)
+                                                    .map((src, i) => {
+                                                        const url = src.startsWith("http")
+                                                            ? src
+                                                            : `https://${src.replace(/^\/+/, "")}`;
+
+                                                        const label =
+                                                            src.toLowerCase().includes("instagram")
                                                                 ? "Instagram"
-                                                                : c.sourceOfLead.includes("facebook")
+                                                                : src.toLowerCase().includes("facebook")
                                                                     ? "Facebook"
-                                                                    : c.sourceOfLead.includes("youtube")
+                                                                    : src.toLowerCase().includes("youtube")
                                                                         ? "YouTube"
-                                                                        : "Source"}
-                                                        </a>
-                                                    ) : (
-                                                        c.sourceOfLead
-                                                    )
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                                        : "Source";
+
+                                                        const color =
+                                                            label === "Instagram"
+                                                                ? "bg-pink-100 text-pink-700"
+                                                                : label === "Facebook"
+                                                                    ? "bg-blue-100 text-blue-700"
+                                                                    : label === "YouTube"
+                                                                        ? "bg-red-100 text-red-700"
+                                                                        : "bg-gray-100 text-gray-700";
+
+                                                        return (
+                                                            <a
+                                                                key={i}
+                                                                href={url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className={`px-2 py-1 rounded-full text-sm mr-1 ${color}`}
+                                                            >
+                                                                {label}
+                                                            </a>
+                                                        );
+                                                    })}
                                             </TableCell>
 
                                             <TableCell>
@@ -756,7 +804,7 @@ function CallSchedule() {
                                                                 ? new Date(c.serviceFollowUpDate.seconds * 1000)
                                                                 : null
                                                         );
-                                                        setSourceOfLead(c.sourceOfLead || "");
+                                                        setSourceOfLead(Array.isArray(c.sourceOfLead) ? c.sourceOfLead : [c.sourceOfLead || ""]);
                                                         setDate(new Date(c.date?.seconds ? c.date.seconds * 1000 : c.date));
                                                         setNote(c.note || "");
                                                         setOpen(true);
