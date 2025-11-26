@@ -64,7 +64,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Trash2, Edit, Plus, FileText,CalendarDays, Search, Download } from "lucide-react";
+import { CalendarIcon, Trash2, Edit, Plus, FileText, CalendarDays, Search, Download } from "lucide-react";
 import { format, set } from "date-fns";
 import toast from "react-hot-toast";
 import { subDays, subMonths, subYears, isWithinInterval } from "date-fns";
@@ -87,6 +87,7 @@ function CallSchedule() {
     const [date, setDate] = useState(null);
     const [customDate, setCustomDate] = useState(null);
     const [note, setNote] = useState("");
+    const [customRange, setCustomRange] = useState({ from: null, to: null });
 
     const [filter, setFilter] = useState("all");
     const [editId, setEditId] = useState(null);
@@ -224,17 +225,31 @@ function CallSchedule() {
     // Filter + Search
     const filteredCalls = calls
         .filter((c) => {
+            const callDate = new Date(
+                c.date?.seconds ? c.date.seconds * 1000 : c.date
+            );
+
             if (filter === "all") return true;
-            const callDate = new Date(c.date?.seconds ? c.date.seconds * 1000 : c.date);
-            if (filter === "today") {
-                return callDate.toDateString() === today.toDateString();
-            }
-            if (filter === "tomorrow") {
+            if (filter === "today") return callDate.toDateString() === today.toDateString();
+            if (filter === "tomorrow")
                 return callDate.toDateString() === tomorrow.toDateString();
-            }
+
+            // custom single date
             if (filter === "custom" && customDate) {
-                return callDate.toDateString() === customDate.toDateString();
+                return callDate.toDateString() === new Date(customDate).toDateString();
             }
+
+            // custom RANGE
+            if (filter === "customRange" && customRange.from && customRange.to) {
+                const start = new Date(customRange.from);
+                const end = new Date(customRange.to);
+
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+
+                return callDate >= start && callDate <= end;
+            }
+
             return true;
         })
         .filter((c) => {
@@ -294,7 +309,7 @@ function CallSchedule() {
             <Navbar />
             <div className="space-y-6 p-4 max-w-8xl mx-auto">
                 {/* Filters */}
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-2 md:gap-3">
                     {/* All */}
                     <Button
                         onClick={() => setFilter("all")}
@@ -346,7 +361,7 @@ function CallSchedule() {
                                 className={`cursor-pointer flex items-center gap-2 px-5 py-2 rounded-xl shadow-sm
                 ${filter === "custom" ? "bg-green-600 text-white" : "bg-white"}`}
                             >
-                               <CalendarDays/> {customDate ? format(customDate, "PPP") : "Pick Date"}
+                                <CalendarDays /> {customDate ? format(customDate, "PPP") : "Pick Date"}
                             </Button>
                         </PopoverTrigger>
 
@@ -359,6 +374,40 @@ function CallSchedule() {
                                     setFilter("custom");
                                 }}
                             />
+                        </PopoverContent>
+                    </Popover>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="rounded-xl px-4 flex items-center cursor-pointer gap-2"
+                            >
+                                <CalendarDays />
+
+                                {customRange.from && customRange.to
+                                    ? `${format(customRange.from, "dd MMM")} - ${format(
+                                        customRange.to,
+                                        "dd MMM yyyy"
+                                    )}`
+                                    : "Custom Range"}
+                            </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="p-3 w-auto">
+                            <Calendar
+                                mode="range"
+                                numberOfMonths={2}
+                                selected={customRange}
+                                onSelect={setCustomRange}
+                            />
+
+                            <Button
+                                className="mt-3 w-full rounded-xl"
+                                disabled={!customRange.from || !customRange.to}
+                                onClick={() => setFilter("customRange")}
+                            >
+                                Apply
+                            </Button>
                         </PopoverContent>
                     </Popover>
 
@@ -425,7 +474,7 @@ function CallSchedule() {
                                         <SelectTrigger>
                                             <SelectValue placeholder={businessType || "Business Type"} />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        {/* <SelectContent>
                                             <SelectItem value="Bakery">Bakery</SelectItem>
                                             <SelectItem value="Car Showroom">Car Showroom</SelectItem>
                                             <SelectItem value="Restaurant">Restaurant</SelectItem>
@@ -465,6 +514,22 @@ function CallSchedule() {
                                             <SelectItem value="Courier & Delivery Service">Courier & Delivery Service</SelectItem>
                                             <SelectItem value="Bike / Car Rental">Bike / Car Rental</SelectItem>
                                             <SelectItem value="Shared Mobility">Shared Mobility</SelectItem>
+                                            <SelectItem value="other">Other (Add New)</SelectItem>
+                                        </SelectContent> */}
+                                        <SelectContent>
+                                            <SelectItem value="Creative Arts">Creative Arts</SelectItem>
+                                            <SelectItem value="Health & Wellness">Health & Wellness</SelectItem>
+                                            <SelectItem value="Healthcare Industry">Healthcare Industry</SelectItem>
+                                            <SelectItem value="Hospitality & F&B (Food & Beverage)">Hospitality & F&B (Food & Beverage)</SelectItem>
+                                            <SelectItem value="Apparel / Fashion Retail">Apparel / Fashion Retail</SelectItem>
+                                            <SelectItem value="Retail / Luxury Retail">Retail / Luxury Retail</SelectItem>
+                                            <SelectItem value="Education">Education</SelectItem>
+                                            <SelectItem value="Real Estate">Real Estate</SelectItem>
+                                            <SelectItem value="Beauty & Wellness">Beauty & Wellness</SelectItem>
+                                            <SelectItem value="Technology / IT Services">Technology / IT Services</SelectItem>
+                                            <SelectItem value="Nonprofit / Social Sector">Nonprofit / Social Sector</SelectItem>
+                                            <SelectItem value="Event & Entertainment">Event & Entertainment</SelectItem>
+                                            <SelectItem value="Industrial / Manufacturing">Industrial / Manufacturing</SelectItem>
                                             <SelectItem value="other">Other (Add New)</SelectItem>
                                         </SelectContent>
                                     </Select>
