@@ -80,7 +80,7 @@ function CallSchedule() {
     const [campaign, setCampaign] = useState("");
     const [businessType, setBusinessType] = useState("");
     const [ownerName, setOwnerName] = useState("");
-    const [ownerContact, setOwnerContact] = useState("");
+    const [ownerContact, setOwnerContact] = useState([""]);
     const [status, setStatus] = useState("");
     const [serviceFollowUpDate, setServiceFollowUpDate] = useState(null);
     const [sourceOfLead, setSourceOfLead] = useState([""]);
@@ -136,10 +136,14 @@ function CallSchedule() {
 
         // ✅ Mobile number validation
         const phoneRegex = /^[6-9]\d{9}$/;
-        if (!ownerContact || !phoneRegex.test(ownerContact)) {
-            toast.error("Please enter a valid 10-digit mobile number");
-            return;
+
+        for (let num of ownerContact) {
+            if (!phoneRegex.test(num)) {
+                toast.error("Please enter valid 10-digit mobile numbers");
+                return;
+            }
         }
+
 
         try {
             if (editId) {
@@ -198,7 +202,7 @@ function CallSchedule() {
         setCampaign("");
         setBusinessType("");
         setOwnerName("");
-        setOwnerContact("");
+        setOwnerContact([""]);
         setStatus("");
         setServiceFollowUpDate(null);
         setSourceOfLead([""]);
@@ -552,11 +556,31 @@ function CallSchedule() {
                                         value={ownerName}
                                         onChange={(e) => setOwnerName(e.target.value)}
                                     />
-                                    <Input
-                                        placeholder="Owner Contact"
-                                        value={ownerContact}
-                                        onChange={(e) => setOwnerContact(e.target.value)}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Owner Contact</label>
+
+                                        {ownerContact.map((num, index) => (
+                                            <Input
+                                                key={index}
+                                                placeholder={`Contact ${index + 1}`}
+                                                value={num}
+                                                onChange={(e) => {
+                                                    const updated = [...ownerContact];
+                                                    updated[index] = e.target.value;
+                                                    setOwnerContact(updated);
+                                                }}
+                                            />
+                                        ))}
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setOwnerContact([...ownerContact, ""])}
+                                        >
+                                            + Add More Contact
+                                        </Button>
+                                    </div>
+
 
                                     <Select value={status} onValueChange={setStatus}>
                                         <SelectTrigger>
@@ -696,7 +720,12 @@ function CallSchedule() {
                                             <TableCell>{c.campaign}</TableCell>
                                             <TableCell>{c.businessType}</TableCell>
                                             <TableCell>{c.ownerName}</TableCell>
-                                            <TableCell>{c.ownerContact}</TableCell>
+                                            <TableCell>
+                                                {Array.isArray(c.ownerContact)
+                                                    ? c.ownerContact.join(", ")
+                                                    : c.ownerContact}
+                                            </TableCell>
+
                                             <TableCell>
                                                 <Badge
                                                     className={`${c.status === "New Lead"
