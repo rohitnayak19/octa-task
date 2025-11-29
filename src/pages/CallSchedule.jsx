@@ -561,13 +561,11 @@ function CallSchedule() {
                                         value={ownerName}
                                         onChange={(e) => setOwnerName(e.target.value)}
                                     />
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Owner Contact</label>
+                                    {ownerContact.map((num, index) => (
+                                        <div key={index} className="flex items-center gap-2 mb-2">
 
-                                        {ownerContact.map((num, index) => (
                                             <Input
-                                                key={index}
-                                                placeholder={`Contact ${index + 1}`}
+                                                placeholder={`Contact Number ${index + 1}`}
                                                 value={num}
                                                 onChange={(e) => {
                                                     const updated = [...ownerContact];
@@ -575,17 +573,28 @@ function CallSchedule() {
                                                     setOwnerContact(updated);
                                                 }}
                                             />
-                                        ))}
 
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => setOwnerContact([...ownerContact, ""])}
-                                        >
-                                            + Add More Contact
-                                        </Button>
-                                    </div>
+                                            {ownerContact.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    className="px-2 py-1 bg-red-100 text-red-400 rounded"
+                                                    onClick={() =>
+                                                        setOwnerContact(ownerContact.filter((_, i) => i !== index))
+                                                    }
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
 
+                                    <Button
+                                        variant="outline"
+                                        className="rounded cursor-pointer mt-1"
+                                        onClick={() => setOwnerContact([...ownerContact, ""])}
+                                    >
+                                        + Add Number
+                                    </Button>
 
                                     <Select value={status} onValueChange={setStatus}>
                                         <SelectTrigger>
