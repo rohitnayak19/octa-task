@@ -262,7 +262,12 @@ function CallSchedule() {
                 (c.campaign || "").toLowerCase().includes(q) ||
                 (c.businessType || "").toLowerCase().includes(q) ||
                 (c.ownerName || "").toLowerCase().includes(q) ||
-                (c.ownerContact || "").toLowerCase().includes(q) ||
+                (
+                    Array.isArray(c.ownerContact)
+                        ? c.ownerContact.join(" ").toLowerCase()
+                        : (c.ownerContact || "").toLowerCase()
+                ).includes(q)
+                ||
                 (c.status || "").toLowerCase().includes(q) ||
                 (
                     Array.isArray(c.sourceOfLead)
