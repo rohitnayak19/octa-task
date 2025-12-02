@@ -87,6 +87,9 @@ function CallSchedule() {
     const [date, setDate] = useState(null);
     const [customDate, setCustomDate] = useState(null);
     const [note, setNote] = useState("");
+    const [service, setService] = useState("");
+    const [location, setLocation] = useState("");
+    const [email, setEmail] = useState("");
     const [customRange, setCustomRange] = useState({ from: null, to: null });
 
     const [filter, setFilter] = useState("all");
@@ -154,6 +157,9 @@ function CallSchedule() {
                     ownerName,
                     ownerContact,
                     status,
+                    service,
+                    location,
+                    email,
                     serviceFollowUpDate,
                     sourceOfLead: sourceOfLead.filter((x) => x.trim() !== ""), // remove empty fields
                     date: finalDate,
@@ -168,6 +174,9 @@ function CallSchedule() {
                     ownerName,
                     ownerContact,
                     status,
+                    service,
+                    location,
+                    email,
                     serviceFollowUpDate,
                     sourceOfLead: sourceOfLead.filter((x) => x.trim() !== ""),
                     date: finalDate,
@@ -207,6 +216,9 @@ function CallSchedule() {
         setServiceFollowUpDate(null);
         setSourceOfLead([""]);
         setDate(null);
+        setService("");
+        setLocation("");
+        setEmail("");
         setNote("");
         setEditId(null);
     };
@@ -273,7 +285,7 @@ function CallSchedule() {
                     Array.isArray(c.sourceOfLead)
                         ? c.sourceOfLead.join(" ").toLowerCase()
                         : (c.sourceOfLead || "").toLowerCase()
-                ).includes(q)
+                ).includes(q) || (c.service || "").toLowerCase().includes(q) || (c.location || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q)
             );
         })
         .filter((c) => {
@@ -466,87 +478,60 @@ function CallSchedule() {
                                     <DialogTitle>{editId ? "Edit Lead" : "New Lead"}</DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-3 py-2">
-                                    <Input
-                                        placeholder="Brand Name"
-                                        value={campaign}
-                                        onChange={(e) => setCampaign(e.target.value)}
-                                    />
+                                    <div className="flex gap-1">
+                                        <Input
+                                            placeholder="Brand Name"
+                                            value={campaign}
+                                            onChange={(e) => setCampaign(e.target.value)}
+                                        />
+                                        <Input
+                                            placeholder="Owner Name"
+                                            value={ownerName}
+                                            onChange={(e) => setOwnerName(e.target.value)}
+                                        />
+                                    </div>
 
                                     {/* Business Type with Other */}
-                                    <Select
-                                        onValueChange={(val) => {
-                                            if (val === "other") {
-                                                setIsOtherBusiness(true);
-                                                setBusinessType("");
-                                            } else {
-                                                setIsOtherBusiness(false);
-                                                setBusinessType(val);
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={businessType || "Business Type"} />
-                                        </SelectTrigger>
-                                        {/* <SelectContent>
-                                            <SelectItem value="Bakery">Bakery</SelectItem>
-                                            <SelectItem value="Car Showroom">Car Showroom</SelectItem>
-                                            <SelectItem value="Restaurant">Restaurant</SelectItem>
-                                            <SelectItem value="Food Truck">Food Truck</SelectItem>
-                                            <SelectItem value="Specialty Café">Specialty Café</SelectItem>
-                                            <SelectItem value="Cloud Kitchen">Cloud Kitchen</SelectItem>
-                                            <SelectItem value="Boutique Clothing Store">Boutique Clothing Store</SelectItem>
-                                            <SelectItem value="Home Décor & Furnishing Shop">Home Décor & Furnishing Shop</SelectItem>
-                                            <SelectItem value="Fitness Studio">Fitness Studio</SelectItem>
-                                            <SelectItem value="Car Wash & Detailing Service">Car Wash & Detailing Service</SelectItem>
-                                            <SelectItem value="Event Planning & Catering">Event Planning & Catering</SelectItem>
-                                            <SelectItem value="Pet Grooming & Boarding">Pet Grooming & Boarding</SelectItem>
-                                            <SelectItem value="E-commerce Store">E-commerce Store</SelectItem>
-                                            <SelectItem value="Digital Marketing Agency">Digital Marketing Agency</SelectItem>
-                                            <SelectItem value="Coworking Space">Coworking Space</SelectItem>
-                                            <SelectItem value="Organic Farm-to-Table Store">Organic Farm-to-Table Store</SelectItem>
-                                            <SelectItem value="Recycling & Upcycling Business">Recycling & Upcycling Business</SelectItem>
-                                            <SelectItem value="EV Charging Station">EV Charging Station</SelectItem>
-                                            <SelectItem value="Bed & Breakfast">Bed & Breakfast</SelectItem>
-                                            <SelectItem value="Theme Café / Restaurant">Theme Café / Restaurant</SelectItem>
-                                            <SelectItem value="Travel Agency">Travel Agency</SelectItem>
-                                            <SelectItem value="Spa & Wellness Center">Spa & Wellness Center</SelectItem>
-                                            <SelectItem value="Nutrition & Diet Consultancy">Nutrition & Diet Consultancy</SelectItem>
-                                            <SelectItem value="Pharmacy & Health Store">Pharmacy & Health Store</SelectItem>
-                                            <SelectItem value="Tutoring / Coaching Center">Tutoring / Coaching Center</SelectItem>
-                                            <SelectItem value="Skill Development Workshops">Skill Development Workshops</SelectItem>
-                                            <SelectItem value="Daycare / Montessori">Daycare / Montessori</SelectItem>
-                                            <SelectItem value="Mobile App Development">Mobile App Development</SelectItem>
-                                            <SelectItem value="IT Support & Cybersecurity">IT Support & Cybersecurity</SelectItem>
-                                            <SelectItem value="Smart Home Solutions">Smart Home Solutions</SelectItem>
-                                            <SelectItem value="Solar Panel Installation">Solar Panel Installation</SelectItem>
-                                            <SelectItem value="Organic Skincare Brand">Organic Skincare Brand</SelectItem>
-                                            <SelectItem value="Urban Farming / Hydroponics">Urban Farming / Hydroponics</SelectItem>
-                                            <SelectItem value="Podcast / YouTube Studio">Podcast / YouTube Studio</SelectItem>
-                                            <SelectItem value="Photography & Videography">Photography & Videography</SelectItem>
-                                            <SelectItem value="Game Zone / VR Arcade">Game Zone / VR Arcade</SelectItem>
-                                            <SelectItem value="Courier & Delivery Service">Courier & Delivery Service</SelectItem>
-                                            <SelectItem value="Bike / Car Rental">Bike / Car Rental</SelectItem>
-                                            <SelectItem value="Shared Mobility">Shared Mobility</SelectItem>
-                                            <SelectItem value="other">Other (Add New)</SelectItem>
-                                        </SelectContent> */}
-                                        <SelectContent>
-                                            <SelectItem value="Creative Arts">Creative Arts</SelectItem>
-                                            <SelectItem value="Health & Wellness">Health & Wellness</SelectItem>
-                                            <SelectItem value="Healthcare Industry">Healthcare Industry</SelectItem>
-                                            <SelectItem value="Hospitality & F&B (Food & Beverage)">Hospitality & F&B (Food & Beverage)</SelectItem>
-                                            <SelectItem value="Apparel / Fashion Retail">Apparel / Fashion Retail</SelectItem>
-                                            <SelectItem value="Retail / Luxury Retail">Retail / Luxury Retail</SelectItem>
-                                            <SelectItem value="Education">Education</SelectItem>
-                                            <SelectItem value="Real Estate">Real Estate</SelectItem>
-                                            <SelectItem value="Beauty & Wellness">Beauty & Wellness</SelectItem>
-                                            <SelectItem value="Technology / IT Services">Technology / IT Services</SelectItem>
-                                            <SelectItem value="Nonprofit / Social Sector">Nonprofit / Social Sector</SelectItem>
-                                            <SelectItem value="Event & Entertainment">Event & Entertainment</SelectItem>
-                                            <SelectItem value="Industrial / Manufacturing">Industrial / Manufacturing</SelectItem>
-                                            <SelectItem value="other">Other (Add New)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
 
+                                    <div className="flex gap-1">
+                                        <Select
+                                            onValueChange={(val) => {
+                                                if (val === "other") {
+                                                    setIsOtherBusiness(true);
+                                                    setBusinessType("");
+                                                } else {
+                                                    setIsOtherBusiness(false);
+                                                    setBusinessType(val);
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={businessType || "Business Type"} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Creative Arts">Creative Arts</SelectItem>
+                                                <SelectItem value="Health & Wellness">Health & Wellness</SelectItem>
+                                                <SelectItem value="Healthcare Industry">Healthcare Industry</SelectItem>
+                                                <SelectItem value="Hospitality & F&B (Food & Beverage)">Hospitality & F&B (Food & Beverage)</SelectItem>
+                                                <SelectItem value="Apparel / Fashion Retail">Apparel / Fashion Retail</SelectItem>
+                                                <SelectItem value="Retail / Luxury Retail">Retail / Luxury Retail</SelectItem>
+                                                <SelectItem value="Education">Education</SelectItem>
+                                                <SelectItem value="Real Estate">Real Estate</SelectItem>
+                                                <SelectItem value="Beauty & Wellness">Beauty & Wellness</SelectItem>
+                                                <SelectItem value="Technology / IT Services">Technology / IT Services</SelectItem>
+                                                <SelectItem value="Nonprofit / Social Sector">Nonprofit / Social Sector</SelectItem>
+                                                <SelectItem value="Event & Entertainment">Event & Entertainment</SelectItem>
+                                                <SelectItem value="Industrial / Manufacturing">Industrial / Manufacturing</SelectItem>
+                                                <SelectItem value="other">Other (Add New)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            placeholder="Location"
+                                        />
+
+                                    </div>
                                     {isOtherBusiness && (
                                         <Input
                                             placeholder="Enter Business Type"
@@ -554,13 +539,6 @@ function CallSchedule() {
                                             onChange={(e) => setBusinessType(e.target.value)}
                                         />
                                     )}
-
-
-                                    <Input
-                                        placeholder="Owner Name"
-                                        value={ownerName}
-                                        onChange={(e) => setOwnerName(e.target.value)}
-                                    />
                                     {ownerContact.map((num, index) => (
                                         <div key={index} className="flex items-center gap-2 mb-2">
 
@@ -596,43 +574,66 @@ function CallSchedule() {
                                         + Add Number
                                     </Button>
 
-                                    <Select value={status} onValueChange={setStatus}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="New Lead">New Lead</SelectItem>
-                                            <SelectItem value="Interested">Interested</SelectItem>
-                                            <SelectItem value="Follow Up">Follow Up</SelectItem>
-                                            <SelectItem value="Service Follow Up">Service Follow Up</SelectItem>
-                                            <SelectItem value="Converted">Converted</SelectItem>
-                                            <SelectItem value="Not Interested">Not Interested</SelectItem>
-                                            <SelectItem value="Call Not Connected">Call Not Connected</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="Email"
+                                    />
 
-                                    {/* Service Follow Up Date */}
-                                    {status !== "New Lead" && (
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" className="justify-start">
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {serviceFollowUpDate
-                                                        ? format(serviceFollowUpDate, "PPP")
-                                                        : "Service Follow Up Date"}
-                                                </Button>
-                                            </PopoverTrigger>
+                                    <div className="flex gap-1">
+                                        <Select value={status} onValueChange={setStatus}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="New Lead">New Lead</SelectItem>
+                                                <SelectItem value="Interested">Interested</SelectItem>
+                                                <SelectItem value="Follow Up">Follow Up</SelectItem>
+                                                <SelectItem value="Service Follow Up">Service Follow Up</SelectItem>
+                                                <SelectItem value="Converted">Converted</SelectItem>
+                                                <SelectItem value="Not Interested">Not Interested</SelectItem>
+                                                <SelectItem value="Call Not Connected">Call Not Connected</SelectItem>
+                                            </SelectContent>
+                                        </Select>
 
-                                            <PopoverContent>
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={serviceFollowUpDate}
-                                                    onSelect={setServiceFollowUpDate}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
+                                        <Select value={service} onValueChange={setService}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Service" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Social Media Management">
+                                                    Social Media Management
+                                                </SelectItem>
 
+                                                <SelectItem value="Ecommerce Management">
+                                                    Ecommerce Management
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {/* Service Follow Up Date */}
+                                        {status !== "New Lead" && (
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className="justify-start">
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {serviceFollowUpDate
+                                                            ? format(serviceFollowUpDate, "PPP")
+                                                            : "Service Follow Up Date"}
+                                                    </Button>
+                                                </PopoverTrigger>
+
+                                                <PopoverContent>
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={serviceFollowUpDate}
+                                                        onSelect={setServiceFollowUpDate}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
+
+                                    </div>
 
                                     <div className="space-y-2">
                                         {sourceOfLead.map((src, index) => (
@@ -671,7 +672,6 @@ function CallSchedule() {
                                             + Add More Source
                                         </Button>
                                     </div>
-
 
                                     <Textarea
                                         placeholder="Type what you discussed with the lead..."
@@ -722,13 +722,16 @@ function CallSchedule() {
                                     <TableRow className="bg-muted/30">
                                         <TableHead>Brand Name</TableHead>
                                         <TableHead>Business Type</TableHead>
+                                        <TableHead>Location</TableHead>
                                         <TableHead>Owner name</TableHead>
                                         <TableHead>Contact</TableHead>
+                                        <TableHead>Email</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Follow Up</TableHead>
                                         <TableHead>Source</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Notes</TableHead>
+                                        <TableHead>Service</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -737,13 +740,14 @@ function CallSchedule() {
                                         <TableRow key={c.id}>
                                             <TableCell>{c.campaign}</TableCell>
                                             <TableCell>{c.businessType}</TableCell>
+                                            <TableCell>{c.location}</TableCell>
                                             <TableCell>{c.ownerName}</TableCell>
                                             <TableCell>
                                                 {Array.isArray(c.ownerContact)
                                                     ? c.ownerContact.join(", ")
                                                     : c.ownerContact}
                                             </TableCell>
-
+                                            <TableCell>{c.email}</TableCell>
                                             <TableCell>
                                                 <Badge
                                                     className={`${c.status === "New Lead"
@@ -833,7 +837,7 @@ function CallSchedule() {
                                                     </DialogContent>
                                                 </Dialog>
                                             </TableCell>
-
+                                            <TableCell>{c.service}</TableCell>
                                             <TableCell className="flex gap-2">
                                                 <Button
                                                     className="cursor-pointer"
@@ -845,6 +849,8 @@ function CallSchedule() {
                                                         setBusinessType(c.businessType || "");
                                                         setOwnerName(c.ownerName || "");
                                                         setOwnerContact(c.ownerContact || "");
+                                                        setEmail(c.email || "");
+                                                        setLocation(c.location || "");
                                                         setStatus(c.status || "");
                                                         setServiceFollowUpDate(
                                                             c.serviceFollowUpDate?.seconds
@@ -852,6 +858,7 @@ function CallSchedule() {
                                                                 : null
                                                         );
                                                         setSourceOfLead(Array.isArray(c.sourceOfLead) ? c.sourceOfLead : [c.sourceOfLead || ""]);
+                                                        setService(c.service || "");
                                                         setDate(new Date(c.date?.seconds ? c.date.seconds * 1000 : c.date));
                                                         setNote(c.note || "");
                                                         setOpen(true);
