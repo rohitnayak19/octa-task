@@ -129,10 +129,10 @@ function CallSchedule() {
     // Add / Update
     const handleSave = async () => {
         const finalDate = date ? date : new Date();
-        if (!campaign || !businessType || !ownerName) {
-            toast.error("Campaign, Business Type, Owner Name, Date required");
-            return;
-        }
+        // if (!campaign || !businessType || !ownerName) {
+        //     toast.error("Campaign, Business Type, Owner Name, Date required");
+        //     return;
+        // }
 
         // ✅ Mobile number validation
         const phoneRegex = /^[6-9]\d{9}$/;
@@ -467,7 +467,7 @@ function CallSchedule() {
                                 </DialogHeader>
                                 <div className="space-y-3 py-2">
                                     <Input
-                                        placeholder="Campaign"
+                                        placeholder="Brand Name"
                                         value={campaign}
                                         onChange={(e) => setCampaign(e.target.value)}
                                     />
@@ -612,23 +612,27 @@ function CallSchedule() {
                                     </Select>
 
                                     {/* Service Follow Up Date */}
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="justify-start">
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {serviceFollowUpDate
-                                                    ? format(serviceFollowUpDate, "PPP")
-                                                    : "Service Follow Up Date"}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent>
-                                            <Calendar
-                                                mode="single"
-                                                selected={serviceFollowUpDate}
-                                                onSelect={setServiceFollowUpDate}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    {status !== "New Lead" && (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="justify-start">
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {serviceFollowUpDate
+                                                        ? format(serviceFollowUpDate, "PPP")
+                                                        : "Service Follow Up Date"}
+                                                </Button>
+                                            </PopoverTrigger>
+
+                                            <PopoverContent>
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={serviceFollowUpDate}
+                                                    onSelect={setServiceFollowUpDate}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+
 
                                     <div className="space-y-2">
                                         {sourceOfLead.map((src, index) => (
@@ -716,7 +720,7 @@ function CallSchedule() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/30">
-                                        <TableHead>Campaign</TableHead>
+                                        <TableHead>Brand Name</TableHead>
                                         <TableHead>Business Type</TableHead>
                                         <TableHead>Owner name</TableHead>
                                         <TableHead>Contact</TableHead>
